@@ -1,11 +1,14 @@
+from collections import namedtuple
 from nmigen import Elaboratable, Module, Signal, Cat, Memory, ClockDomain, ClockSignal
 from nmigen.lib.fifo import AsyncFIFO
 
-__all__ = ["Sniffer"]
+__all__ = ['Sniffer']
+
+OPL = namedtuple('OPL', ('oplClk', 'data', 'load'))
 
 class Sniffer(Elaboratable):
-	def __init__(self, opl):
-		self.opl = opl
+	def __init__(self):
+		self.opl = OPL(Signal(), Signal(), Signal())
 
 		self.validIncrement = Signal()
 		self.data = Signal(16)
@@ -20,9 +23,11 @@ class Sniffer(Elaboratable):
 		m.domains.opl = ClockDomain()
 
 		m.d.comb += [
-			ClockSignal('opl').eq(opl.oplClk.i),
+			ClockSignal('opl').eq(opl.oplClk),
 			sampleFIFO.w_data.eq(data)
 		]
 
-		m.d.opl += data.eq(Cat(opl.data.i, data[:-1]))
+		m.d.opl += [
+			data.eq(Cat(data[1:], opl.data))
+		]
 		return m

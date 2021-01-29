@@ -9,5 +9,13 @@ class OPL2Sniffer(Elaboratable):
 	def elaborate(self, platform):
 		from .sniffer import Sniffer
 		m = Module()
-		m.submodules.sniffer = Sniffer(self.opl)
+		opl = self.opl
+
+		sniffer = Sniffer()
+		m.submodules.sniffer = sniffer
+		m.d.comb += [
+			sniffer.opl.oplClk.eq(opl.oplClk.i),
+			sniffer.opl.data.eq(opl.data.i),
+			sniffer.opl.load.eq(opl.load.i)
+		]
 		return m
