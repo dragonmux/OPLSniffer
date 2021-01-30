@@ -14,6 +14,7 @@ class OPLSnifferPlatform(XilinxSpartan6Platform):
 	resources = [
 		Resource('rst', 0, Pins('P143', dir = 'i'), Attrs(IOSTANDARD = 'LVCMOS33', PULLUP = 'TRUE')),
 		Resource('clk25MHz', 0, Pins('P94', dir = 'i'), Clock(25e6), Attrs(IOSTANDARD = 'LVCMOS33')),
+		Resource('clk50MHz', 0, Pins('P123', dir = 'i'), Clock(50e6), Attrs(IOSTANDARD = 'LVCMOS33')),
 		OPLResource('opl', 0, load = 'P14', data = 'P15', oplClk = 'P16', attrs = Attrs(IOSTANDARD = 'LVCMOS33')),
 		*GPIOResources(default_name = 'gpioA', pins="P1 P2 P5 P6 P7 P8 P9 P10",
 			attrs = Attrs(IOSTANDARD = 'LVCMOS33'))
