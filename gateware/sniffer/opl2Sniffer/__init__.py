@@ -8,6 +8,7 @@ class OPL2Sniffer(Elaboratable):
 
 	def elaborate(self, platform):
 		from .sniffer import Sniffer
+		from .busInterface import BusInterface
 		m = Module()
 		opl = self.opl
 		gpioA0 = platform.request('gpioA', 0)
@@ -23,5 +24,13 @@ class OPL2Sniffer(Elaboratable):
 			gpioA0.o.eq(sniffer.fifoFull),
 			gpioA1.oe.eq(1),
 			gpioA1.o.eq(sniffer.fifoReadable)
+		]
+
+		busInterface = BusInterface()
+		m.submodules.busInterface = busInterface
+		m.d.comb += [
+			busInterface.availableSamples.eq(sniffer.availableCount),
+			sniffer.read.eq(busInterface.readSample),
+			busInterface.sample.eq(sniffer.sample)
 		]
 		return m
