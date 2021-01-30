@@ -10,10 +10,15 @@ class Sniffer(Elaboratable):
 	def __init__(self):
 		self.opl = OPL(Signal(name = 'oplClk'), Signal(name = 'oplData'), Signal(name = 'oplLoad'))
 
-		self.validIncrement = Signal()
+		self.sample = Signal(16)
+		self.read = Signal()
+		self.availableCount = Signal(10)
+		self.fifoReadable = Signal()
+
 		self.data = Signal(16)
 		self.load = Signal()
 		self.latch = Signal()
+		self.fifoFull = Signal()
 
 	def elaborate(self, platform):
 		m = Module()
@@ -28,8 +33,13 @@ class Sniffer(Elaboratable):
 
 		m.d.comb += [
 			ClockSignal('opl').eq(opl.oplClk),
+			self.sample.eq(sampleFIFO.r_data),
+			sampleFIFO.r_en.eq(self.read),
+			self.availableCount.eq(sampleFIFO.r_level),
+			self.fifoReadable.eq(sampleFIFO.r_rdy),
 			sampleFIFO.w_data.eq(data),
-			sampleFIFO.w_en.eq(latch)
+			sampleFIFO.w_en.eq(latch),
+			self.fifoFull.eq(~sampleFIFO.w_rdy)
 		]
 
 		m.d.opl += [
