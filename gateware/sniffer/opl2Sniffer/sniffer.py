@@ -8,7 +8,7 @@ OPL = namedtuple('OPL', ('oplClk', 'data', 'load'))
 
 class Sniffer(Elaboratable):
 	def __init__(self):
-		self.opl = OPL(Signal(), Signal(), Signal())
+		self.opl = OPL(Signal(name = 'oplClk'), Signal(name = 'oplData'), Signal(name = 'oplLoad'))
 
 		self.validIncrement = Signal()
 		self.data = Signal(16)
