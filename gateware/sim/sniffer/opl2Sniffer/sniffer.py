@@ -41,10 +41,8 @@ def benchOPL():
 	yield
 	yield opl.load.eq(0)
 	assert (yield sniffer.availableCount) == 0
-	for value in loadConst(0x2DC7, 0):
-		yield value
-	for value in loadConst(0xB968, 1):
-		yield value
+	yield from loadConst(0x2DC7, 0)
+	yield from loadConst(0xB968, 1)
 	yield
 	yield
 	assert (yield sniffer.availableCount) == 1
