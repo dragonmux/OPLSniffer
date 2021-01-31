@@ -5,12 +5,14 @@ __all__ = ["PIC16"]
 
 class PIC16(Elaboratable):
 	def __init__(self):
-		self.iAddr = Signal()# TODO, figure out how wide the instruction bus needs to be
+		self.iAddr = Signal(12)
 		self.iData = Signal(14)
+		self.iRead = Signal()
 		self.pAddr = Signal(range(128))
 		self.pData = Signal(8)
 
 		self.wreg = Signal(8)
+		self.pc = Signal(12)
 
 	def elaborate(self, platform):
 		from .decoder import Decoder
@@ -25,56 +27,90 @@ class PIC16(Elaboratable):
 		m.d.sync += q.eq(q + 1)
 
 		instruction = Signal(14)
+		lhs = Signal(8)
+		rhs = Signal(8)
 		result = Signal(8)
 
 		opcode = Signal(Opcodes)
 		aluOpcode = self.mapALUOpcode(m, opcode)
+		needsWReg = self.needsWReg(m, opcode)
 
 		with m.Switch(q):
 			with m.Case(0):
 				m.d.sync += [
-					instruction.eq(self.iData),
-					decoder.instruction.eq(instruction)
+					self.iAddr.eq(self.pc),
+					self.iRead.eq(1)
 				]
 			with m.Case(1):
+				m.d.sync += [
+					instruction.eq(self.iData),
+					self.iRead.eq(0),
+					decoder.instruction.eq(instruction)
+				]
+			with m.Case(2):
 				m.d.sync += [
 					opcode.eq(decoder.opcode),
 					alu.operation.eq(aluOpcode)
 				]
-			with m.Case(2):
+			with m.Case(3):
 				with m.If(aluOpcode != ALUOpcode.NONE):
 					m.d.sync += result.eq(alu.result)
+				with m.Elif((opcode == Opcodes.CLRF) | (opcode == Opcodes.CLRW)):
+					m.d.sync += result.eq(0)
 
-		m.d.comb += self.pData.eq(result)
+				m.d.sync += self.pc.eq(self.pc + 1)
+
+		with m.If(needsWReg == 1):
+			m.d.comb += lhs.eq(self.wreg)
+
+		m.d.comb += [
+			alu.lhs.eq(lhs),
+			alu.rhs.eq(rhs),
+			self.pData.eq(result)
+		]
 		return m
 
 	def mapALUOpcode(self, m, opcode):
 		result = Signal(ALUOpcode)
 		with m.Switch(opcode):
-			with m.Case(Opcodes.ADDLW):
+			with m.Case(Opcodes.ADDLW, Opcodes.ADDWF):
 				m.d.comb += result.eq(ALUOpcode.ADD)
-			with m.Case(Opcodes.ADDWF):
-				m.d.comb += result.eq(ALUOpcode.ADD)
-			with m.Case(Opcodes.SUBLW):
-				m.d.comb += result.eq(ALUOpcode.SUB)
-			with m.Case(Opcodes.SUBWF):
+			with m.Case(Opcodes.SUBLW, Opcodes.SUBWF):
 				m.d.comb += result.eq(ALUOpcode.SUB)
 			with m.Case(Opcodes.INCF):
 				m.d.comb += result.eq(ALUOpcode.INC)
 			with m.Case(Opcodes.DECF):
 				m.d.comb += result.eq(ALUOpcode.DEC)
-			with m.Case(Opcodes.ANDLW):
+			with m.Case(Opcodes.ANDLW, Opcodes.ANDWF):
 				m.d.comb += result.eq(ALUOpcode.AND)
-			with m.Case(Opcodes.ANDWF):
-				m.d.comb += result.eq(ALUOpcode.AND)
-			with m.Case(Opcodes.IORLW):
+			with m.Case(Opcodes.IORLW, Opcodes.IORWF):
 				m.d.comb += result.eq(ALUOpcode.OR)
-			with m.Case(Opcodes.IORWF):
-				m.d.comb += result.eq(ALUOpcode.OR)
-			with m.Case(Opcodes.XORLW):
-				m.d.comb += result.eq(ALUOpcode.XOR)
-			with m.Case(Opcodes.XORWF):
+			with m.Case(Opcodes.XORLW, Opcodes.XORWF):
 				m.d.comb += result.eq(ALUOpcode.XOR)
 			with m.Default():
 				m.d.comb += result.eq(ALUOpcode.NONE)
+		return result
+
+	def needsWReg(self, m, opcode):
+		result = Signal()
+		with m.Switch(opcode):
+			with m.Case(
+				Opcodes.MOVWF,
+				Opcodes.CLRW,
+				Opcodes.SUBWF,
+				Opcodes.IORWF,
+				Opcodes.ANDWF,
+				Opcodes.XORWF,
+				Opcodes.ADDWF,
+				Opcodes.MOVLW,
+				Opcodes.RETLW,
+				Opcodes.IORLW,
+				Opcodes.ANDLW,
+				Opcodes.XORLW,
+				Opcodes.SUBLW,
+				Opcodes.ADDLW
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
 		return result
