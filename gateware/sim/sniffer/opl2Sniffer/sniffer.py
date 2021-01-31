@@ -49,9 +49,9 @@ def benchOPL():
 
 sim = Simulator(sniffer)
 # This defines the sync clock to have a period of 1/25MHz
-sim.add_clock(40e-6, domain = 'sync')
+sim.add_clock(40e-9, domain = 'sync')
 # This defines the OPL clock to have a period of 1/2MHz
-sim.add_clock(500e-6, domain = 'opl')
+sim.add_clock(500e-9, domain = 'opl')
 sim.add_sync_process(benchSync, domain = 'sync')
 sim.add_sync_process(benchOPL, domain = 'opl')
 

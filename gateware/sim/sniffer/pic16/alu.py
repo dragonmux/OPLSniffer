@@ -94,7 +94,7 @@ def benchSync():
 
 sim = Simulator(dut)
 # This defines the sync clock to have a period of 1/25MHz
-sim.add_clock(40e-6, domain = 'sync')
+sim.add_clock(40e-9, domain = 'sync')
 sim.add_sync_process(benchSync, domain = 'sync')
 
 with sim.write_vcd('alu.vcd'):
