@@ -8,8 +8,10 @@ class PIC16(Elaboratable):
 		self.iAddr = Signal(12)
 		self.iData = Signal(14)
 		self.iRead = Signal()
-		self.pAddr = Signal(range(128))
+		self.pAddr = Signal(7)
 		self.pData = Signal(8)
+		self.pRead = Signal()
+		self.pWrite = Signal()
 
 		self.wreg = Signal(8)
 		self.pc = Signal(12)
@@ -33,40 +35,69 @@ class PIC16(Elaboratable):
 
 		opcode = Signal(Opcodes)
 		aluOpcode = self.mapALUOpcode(m, opcode)
+
 		needsWReg = self.needsWReg(m, opcode)
+		needsFReg = self.needsFReg(m, opcode)
+		loadsLiteral = self.loadsLiteral(m, opcode)
+		storesWReg = self.storesWReg(m, opcode)
+		storesFReg = self.storesFReg(m, opcode, instruction[7])
 
 		with m.Switch(q):
 			with m.Case(0):
 				m.d.sync += [
+					self.pWrite.eq(0),
 					self.iAddr.eq(self.pc),
 					self.iRead.eq(1)
 				]
 			with m.Case(1):
 				m.d.sync += [
-					instruction.eq(self.iData),
 					self.iRead.eq(0),
+					instruction.eq(self.iData),
 					decoder.instruction.eq(instruction)
 				]
 			with m.Case(2):
-				m.d.sync += [
-					opcode.eq(decoder.opcode),
-					alu.operation.eq(aluOpcode)
-				]
+				with m.If(needsWReg == 1):
+					m.d.comb += lhs.eq(self.wreg)
+
+				with m.If(needsFReg == 1):
+					m.d.sync += [
+						self.pAddr.eq(instruction[0:7]),
+						self.pRead.eq(1)
+					]
+					m.d.comb += rhs.eq(self.pData)
+				with m.Elif(loadsLiteral == 1):
+					m.d.comb += rhs.eq(instruction[0:8])
+
+				m.d.sync += alu.operation.eq(aluOpcode)
 			with m.Case(3):
 				with m.If(aluOpcode != ALUOpcode.NONE):
-					m.d.sync += result.eq(alu.result)
+					m.d.comb += result.eq(alu.result)
 				with m.Elif((opcode == Opcodes.CLRF) | (opcode == Opcodes.CLRW)):
-					m.d.sync += result.eq(0)
+					m.d.comb += result.eq(0)
+				with m.Elif(opcode == Opcodes.MOVLW):
+					#m.d.comb += result.eq(rhs)
+					m.d.comb += result.eq(instruction[0:8])
 
-				m.d.sync += self.pc.eq(self.pc + 1)
+				with m.If(storesWReg == 1):
+					m.d.sync += self.wreg.eq(result)
+				with m.Elif(storesFReg == 1):
+					m.d.sync += [
+						self.pAddr.eq(instruction[0:7]),
+						self.pData.eq(result),
+						self.pWrite.eq(1)
+					]
 
-		with m.If(needsWReg == 1):
-			m.d.comb += lhs.eq(self.wreg)
+				m.d.sync += [
+					self.pRead.eq(0),
+					self.pc.eq(self.pc + 1)
+				]
 
 		m.d.comb += [
+			opcode.eq(decoder.opcode)
+		]
+		m.d.sync += [
 			alu.lhs.eq(lhs),
-			alu.rhs.eq(rhs),
-			self.pData.eq(result)
+			alu.rhs.eq(rhs)
 		]
 		return m
 
