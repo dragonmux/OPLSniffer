@@ -13,73 +13,73 @@ class Decoder(Elaboratable):
 
 		with m.Switch(self.instruction):
 			with m.Case('00 0000 0--0 0000'):
-				m.d.sync += self.opcode.eq(Opcodes.NOP)
+				m.d.comb += self.opcode.eq(Opcodes.NOP)
 			with m.Case('00 0000 0000 1000'):
-				m.d.sync += self.opcode.eq(Opcodes.RETURN)
+				m.d.comb += self.opcode.eq(Opcodes.RETURN)
 			with m.Case('00 0000 0000 1001'):
-				m.d.sync += self.opcode.eq(Opcodes.RETFIE)
+				m.d.comb += self.opcode.eq(Opcodes.RETFIE)
 			with m.Case('00 0000 0110 0011'):
-				m.d.sync += self.opcode.eq(Opcodes.SLEEP)
+				m.d.comb += self.opcode.eq(Opcodes.SLEEP)
 			# CLRWDT is skipped here as we don't have a WDT.
 			with m.Case('00 0000 1--- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.MOVWF)
+				m.d.comb += self.opcode.eq(Opcodes.MOVWF)
 			with m.Case('00 0001 0--- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.CLRW)
+				m.d.comb += self.opcode.eq(Opcodes.CLRW)
 			with m.Case('00 0001 1--- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.CLRF)
+				m.d.comb += self.opcode.eq(Opcodes.CLRF)
 			with m.Case('00 0010 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.SUBWF)
+				m.d.comb += self.opcode.eq(Opcodes.SUBWF)
 			with m.Case('00 0011 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.DECF)
+				m.d.comb += self.opcode.eq(Opcodes.DECF)
 			with m.Case('00 0100 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.IORWF)
+				m.d.comb += self.opcode.eq(Opcodes.IORWF)
 			with m.Case('00 0101 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.ANDWF)
+				m.d.comb += self.opcode.eq(Opcodes.ANDWF)
 			with m.Case('00 0110 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.XORWF)
+				m.d.comb += self.opcode.eq(Opcodes.XORWF)
 			with m.Case('00 0111 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.ADDWF)
+				m.d.comb += self.opcode.eq(Opcodes.ADDWF)
 			with m.Case('00 1000 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.MOVF)
+				m.d.comb += self.opcode.eq(Opcodes.MOVF)
 			with m.Case('00 1001 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.COMF)
+				m.d.comb += self.opcode.eq(Opcodes.COMF)
 			with m.Case('00 1010 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.INCF)
+				m.d.comb += self.opcode.eq(Opcodes.INCF)
 			with m.Case('00 1011 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.DECFSZ)
+				m.d.comb += self.opcode.eq(Opcodes.DECFSZ)
 			with m.Case('00 1100 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.RRF)
+				m.d.comb += self.opcode.eq(Opcodes.RRF)
 			with m.Case('00 1101 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.RLF)
+				m.d.comb += self.opcode.eq(Opcodes.RLF)
 			with m.Case('00 1110 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.SWAPF)
+				m.d.comb += self.opcode.eq(Opcodes.SWAPF)
 			with m.Case('00 1111 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.INCFSZ)
+				m.d.comb += self.opcode.eq(Opcodes.INCFSZ)
 			with m.Case('01 00-- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.BCF)
+				m.d.comb += self.opcode.eq(Opcodes.BCF)
 			with m.Case('01 01-- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.BSF)
+				m.d.comb += self.opcode.eq(Opcodes.BSF)
 			with m.Case('01 10-- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.BTFSC)
+				m.d.comb += self.opcode.eq(Opcodes.BTFSC)
 			with m.Case('01 11-- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.BTFSS)
+				m.d.comb += self.opcode.eq(Opcodes.BTFSS)
 			with m.Case('10 0--- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.CALL)
+				m.d.comb += self.opcode.eq(Opcodes.CALL)
 			with m.Case('10 1--- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.GOTO)
+				m.d.comb += self.opcode.eq(Opcodes.GOTO)
 			with m.Case('11 00-- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.MOVLW)
+				m.d.comb += self.opcode.eq(Opcodes.MOVLW)
 			with m.Case('11 01-- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.RETLW)
+				m.d.comb += self.opcode.eq(Opcodes.RETLW)
 			with m.Case('11 1000 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.IORLW)
+				m.d.comb += self.opcode.eq(Opcodes.IORLW)
 			with m.Case('11 1001 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.ANDLW)
+				m.d.comb += self.opcode.eq(Opcodes.ANDLW)
 			with m.Case('11 1010 ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.XORLW)
+				m.d.comb += self.opcode.eq(Opcodes.XORLW)
 			with m.Case('11 110- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.SUBLW)
+				m.d.comb += self.opcode.eq(Opcodes.SUBLW)
 			with m.Case('11 111- ---- ----'):
-				m.d.sync += self.opcode.eq(Opcodes.ADDLW)
+				m.d.comb += self.opcode.eq(Opcodes.ADDLW)
 
 		return m
