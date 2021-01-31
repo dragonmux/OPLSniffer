@@ -13,8 +13,6 @@ from sniffer.pic16.types import ALUOpcode
 from sniffer.pic16.alu import ALU
 
 dut = ALU()
-result = dut.result
-carry = dut.carry
 
 def perform(opcode, lhs, rhs):
 	yield dut.operation.eq(opcode)
@@ -26,6 +24,7 @@ def checkResult(result, carry):
 	assert (yield dut.carry) == carry
 
 def benchSync():
+	yield dut.enable.eq(1)
 	yield from perform(ALUOpcode.NONE, 0, 0)
 	yield
 	yield from checkResult(0, 0)
