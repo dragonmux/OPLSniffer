@@ -71,7 +71,7 @@ class PIC16(Elaboratable):
 		return m
 
 	def mapALUOpcode(self, m, opcode):
-		result = Signal(ALUOpcode)
+		result = Signal(ALUOpcode, name = "aluOpcode")
 		with m.Switch(opcode):
 			with m.Case(Opcodes.ADDLW, Opcodes.ADDWF):
 				m.d.comb += result.eq(ALUOpcode.ADD)
