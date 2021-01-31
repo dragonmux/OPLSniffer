@@ -44,5 +44,11 @@ class ALUOpcode(Enum):
 	INC = 3
 	DEC = 4
 	AND = 5
-	OR  = 6
+	OR = 6
 	XOR = 7
+
+class BitOpcode(Enum):
+	NONE = 0
+	ROTR = 1
+	ROTL = 2
+	SWAP = 3

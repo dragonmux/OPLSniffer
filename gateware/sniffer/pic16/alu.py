@@ -40,5 +40,4 @@ class ALU(Elaboratable):
 			self.result.eq(result[0:8]),
 			self.carry.eq(result[8])
 		]
-
 		return m
