@@ -92,25 +92,109 @@ class PIC16(Elaboratable):
 		return result
 
 	def needsWReg(self, m, opcode):
-		result = Signal()
+		result = Signal(name = "needsWReg")
 		with m.Switch(opcode):
 			with m.Case(
 				Opcodes.MOVWF,
-				Opcodes.CLRW,
+				Opcodes.ADDWF,
 				Opcodes.SUBWF,
+				Opcodes.ANDWF,
+				Opcodes.IORWF,
+				Opcodes.XORWF,
+				Opcodes.ADDLW,
+				Opcodes.SUBLW,
+				Opcodes.ANDLW,
+				Opcodes.IORLW,
+				Opcodes.XORLW
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
+		return result
+
+	def needsFReg(self, m, opcode):
+		result = Signal(name = "needsFReg")
+		with m.Switch(opcode):
+			with m.Case(
+				Opcodes.ADDWF,
+				Opcodes.SUBWF,
+				Opcodes.ANDWF,
+				Opcodes.IORWF,
+				Opcodes.XORWF,
+				Opcodes.INCF,
+				Opcodes.INCFSZ,
+				Opcodes.DECF,
+				Opcodes.DECFSZ,
+				Opcodes.COMF,
+				Opcodes.MOVF,
+				Opcodes.RLF,
+				Opcodes.RRF,
+				Opcodes.SWAPF,
+				Opcodes.BTFSC,
+				Opcodes.BTFSS
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
+		return result
+
+	def loadsLiteral(self, m, opcode):
+		result = Signal(name = "loadsLiteral")
+		with m.Switch(opcode):
+			with m.Case(
+				Opcodes.MOVLW,
+				Opcodes.RETLW,
+				Opcodes.ADDLW,
+				Opcodes.SUBLW,
+				Opcodes.ANDLW,
+				Opcodes.IORLW,
+				Opcodes.XORLW
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
+		return result
+
+	def storesWReg(self, m, opcode):
+		result = Signal(name = "storesWReg")
+		with m.Switch(opcode):
+			with m.Case(
+				Opcodes.CLRW,
+				Opcodes.MOVLW,
+				Opcodes.RETLW,
+				Opcodes.ADDLW,
+				Opcodes.SUBLW,
+				Opcodes.ANDLW,
+				Opcodes.IORLW,
+				Opcodes.XORLW
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
+		return result
+
+	def storesFReg(self, m, opcode, dir):
+		result = Signal(name = "storesFReg")
+		with m.Switch(opcode):
+			with m.Case(
+				Opcodes.MOVWF,
+				Opcodes.CLRF,
+				Opcodes.SUBWF,
+				Opcodes.DECF,
 				Opcodes.IORWF,
 				Opcodes.ANDWF,
 				Opcodes.XORWF,
 				Opcodes.ADDWF,
-				Opcodes.MOVLW,
-				Opcodes.RETLW,
-				Opcodes.IORLW,
-				Opcodes.ANDLW,
-				Opcodes.XORLW,
-				Opcodes.SUBLW,
-				Opcodes.ADDLW
+				Opcodes.MOVF,
+				Opcodes.COMF,
+				Opcodes.INCF,
+				Opcodes.RRF,
+				Opcodes.RLF,
+				Opcodes.SWAPF,
+				Opcodes.BCF,
+				Opcodes.BSF
 			):
-				m.d.comb += result.eq(1)
+				m.d.comb += result.eq(dir)
 			with m.Default():
 				m.d.comb += result.eq(0)
 		return result
