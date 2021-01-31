@@ -45,43 +45,9 @@ class PIC16(Elaboratable):
 
 		with m.Switch(q):
 			with m.Case(0):
-				m.d.sync += [
-					self.pWrite.eq(0),
-					self.iAddr.eq(self.pc),
-					self.iRead.eq(1)
-				]
-			with m.Case(1):
-				m.d.sync += [
-					self.iRead.eq(0),
-					instruction.eq(self.iData),
-					decoder.instruction.eq(instruction)
-				]
-			with m.Case(2):
-				with m.If(loadsWReg == 1):
-					m.d.comb += lhs.eq(self.wreg)
-
-				with m.If(loadsFReg == 1):
-					m.d.sync += [
-						self.pAddr.eq(instruction[0:7]),
-						self.pRead.eq(1)
-					]
-					m.d.comb += rhs.eq(self.pData)
-				with m.Elif(loadsLiteral == 1):
-					m.d.comb += rhs.eq(instruction[0:8])
-
-				m.d.sync += alu.operation.eq(aluOpcode)
-			with m.Case(3):
-				with m.If(aluOpcode != ALUOpcode.NONE):
-					m.d.comb += result.eq(alu.result)
-				with m.Elif((opcode == Opcodes.CLRF) | (opcode == Opcodes.CLRW)):
-					m.d.comb += result.eq(0)
-				with m.Elif(opcode == Opcodes.MOVLW):
-					#m.d.comb += result.eq(rhs)
-					m.d.comb += result.eq(instruction[0:8])
-
-				with m.If(storesWReg == 1):
+				with m.If(storesWReg):
 					m.d.sync += self.wreg.eq(result)
-				with m.Elif(storesFReg == 1):
+				with m.Elif(storesFReg):
 					m.d.sync += [
 						self.pAddr.eq(instruction[0:7]),
 						self.pData.eq(result),
@@ -89,12 +55,50 @@ class PIC16(Elaboratable):
 					]
 
 				m.d.sync += [
+					self.iAddr.eq(self.pc),
+					self.iRead.eq(1)
+				]
+			with m.Case(1):
+				m.d.sync += [
+					self.pWrite.eq(0),
+					self.iRead.eq(0),
+					instruction.eq(self.iData)
+				]
+			with m.Case(2):
+				with m.If(loadsFReg):
+					m.d.sync += [
+						self.pAddr.eq(instruction[0:7]),
+						self.pRead.eq(1),
+					]
+				m.d.sync += aluEnable.eq(1)
+			with m.Case(3):
+				m.d.sync += [
+					aluEnable.eq(0),
 					self.pRead.eq(0),
 					self.pc.eq(self.pc + 1)
 				]
 
+		with m.If(loadsWReg):
+			m.d.comb += lhs.eq(self.wreg)
+		with m.Else():
+			m.d.comb += lhs.eq(0)
+
+		with m.If(loadsFReg):
+			m.d.comb += rhs.eq(self.pData)
+		with m.Elif(loadsLiteral):
+			m.d.comb += rhs.eq(instruction[0:8])
+
+		with m.If(aluOpcode != ALUOpcode.NONE):
+			m.d.comb += result.eq(alu.result)
+		with m.Elif((opcode == Opcodes.CLRF) | (opcode == Opcodes.CLRW)):
+			m.d.comb += result.eq(0)
+		with m.Elif(opcode == Opcodes.MOVLW):
+			m.d.comb += result.eq(rhs)
+
 		m.d.comb += [
+			decoder.instruction.eq(instruction),
 			opcode.eq(decoder.opcode),
+			alu.operation.eq(aluOpcode),
 			alu.enable.eq(aluEnable),
 			alu.lhs.eq(lhs),
 			alu.rhs.eq(rhs)
