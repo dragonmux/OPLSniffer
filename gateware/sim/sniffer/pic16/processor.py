@@ -37,6 +37,7 @@ def benchSync():
 	# Perform ADDLW 5
 	yield dut.iData.eq(0b11_1110_0000_0101)
 	yield
+	assert (yield dut.wreg) == 0x1F
 	assert (yield dut.iRead) == 1
 	yield
 	assert (yield dut.iRead) == 0
@@ -46,15 +47,22 @@ def benchSync():
 	# Perform ADDWF 5,f
 	yield dut.iData.eq(0b00_0111_1000_0101)
 	yield
+	assert (yield dut.wreg) == 0x24
 	assert (yield dut.iRead) == 1
 	yield
+	assert (yield dut.pRead) == 0
 	assert (yield dut.iRead) == 0
+	yield dut.pData.eq(0x20)
 	yield
+	assert (yield dut.pRead) == 1
 	yield
+	assert (yield dut.pRead) == 0
 
 	# Perform NOP
 	yield dut.iData.eq(0b00_0000_0000_0000)
 	yield
+	assert (yield dut.wreg) == 0x24
+	assert (yield dut.pData) == 0x44
 	yield
 	yield
 	yield
