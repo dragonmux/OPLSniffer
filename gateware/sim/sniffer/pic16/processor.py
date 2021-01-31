@@ -57,18 +57,46 @@ def benchSync():
 	assert (yield dut.pRead) == 1
 	yield
 	assert (yield dut.pRead) == 0
+	assert (yield dut.pWrite) == 0
+	# Perform SWAPF 8,f
+	yield dut.iData.eq(0b00_1110_1000_1000)
+	yield
+	assert (yield dut.wreg) == 0x24
+	assert (yield dut.iRead) == 1
+	assert (yield dut.pWrite) == 1
+	assert (yield dut.pData) == 0x44
+	yield
+	assert (yield dut.iRead) == 0
+	assert (yield dut.pWrite) == 0
+	yield dut.pData.eq(0x0F)
+	yield
+	assert (yield dut.pRead) == 1
+	yield
+	assert (yield dut.pRead) == 0
+	assert (yield dut.pWrite) == 0
+
+	# Perform RLF 8,w
+	yield dut.iData.eq(0b00_1101_0000_1000)
+	yield
+	assert (yield dut.pWrite) == 1
+	assert (yield dut.pData) == 0xF0
+	yield
+	assert (yield dut.iRead) == 0
+	assert (yield dut.pWrite) == 0
+	yield dut.pData.eq(0x80)
+	yield
+	assert (yield dut.pRead) == 1
+	yield
+	assert (yield dut.pRead) == 0
+	assert (yield dut.pWrite) == 0
 
 	# Perform NOP
 	yield dut.iData.eq(0b00_0000_0000_0000)
 	yield
-	assert (yield dut.wreg) == 0x24
-	assert (yield dut.pData) == 0x44
+	assert (yield dut.wreg) == 0
+	assert (yield dut.pWrite) == 0
 	yield
-	yield
-	yield
-
-	yield
-	yield
+	assert (yield dut.pWrite) == 0
 	yield
 	yield
 
