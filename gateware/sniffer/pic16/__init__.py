@@ -20,11 +20,14 @@ class PIC16(Elaboratable):
 	def elaborate(self, platform):
 		from .decoder import Decoder
 		from .alu import ALU
+		from .bitmanip import Bitmanip
 		m = Module()
 		decoder = Decoder()
 		m.submodules.decoder = decoder
 		alu = ALU()
 		m.submodules.alu = alu
+		bitmanip = Bitmanip()
+		m.submodules.bitmanip = bitmanip
 
 		q = Signal(unsigned(2))
 		m.d.sync += q.eq(q + 1)
@@ -33,12 +36,13 @@ class PIC16(Elaboratable):
 		lhs = Signal(8)
 		rhs = Signal(8)
 		result = Signal(8)
-		aluEnable = Signal()
+		opEnable = Signal()
 
 		carry = self.flags[0]
 
 		opcode = Signal(Opcodes)
 		aluOpcode = self.mapALUOpcode(m, opcode)
+		bitOpcode = self.mapBitmanipOpcode(m, opcode)
 
 		loadsWReg = self.loadsWReg(m, opcode)
 		loadsFReg = self.loadsFReg(m, opcode)
@@ -59,6 +63,8 @@ class PIC16(Elaboratable):
 
 				with m.If(aluOpcode != ALUOpcode.NONE):
 					m.d.sync += carry.eq(alu.carry)
+				with m.If(bitOpcode != BitOpcode.NONE):
+					m.d.sync += carry.eq(bitmanip.carryOut)
 
 				m.d.sync += [
 					self.iAddr.eq(self.pc),
@@ -76,10 +82,11 @@ class PIC16(Elaboratable):
 						self.pAddr.eq(instruction[0:7]),
 						self.pRead.eq(1),
 					]
-				m.d.sync += aluEnable.eq(1)
+
+				m.d.sync += opEnable.eq(1)
 			with m.Case(3):
 				m.d.sync += [
-					aluEnable.eq(0),
+					opEnable.eq(0),
 					self.pRead.eq(0),
 					self.pc.eq(self.pc + 1)
 				]
@@ -96,6 +103,8 @@ class PIC16(Elaboratable):
 
 		with m.If(aluOpcode != ALUOpcode.NONE):
 			m.d.comb += result.eq(alu.result)
+		with m.If(bitOpcode != BitOpcode.NONE):
+			m.d.comb += result.eq(bitmanip.result)
 		with m.Elif((opcode == Opcodes.CLRF) | (opcode == Opcodes.CLRW)):
 			m.d.comb += result.eq(0)
 		with m.Elif(opcode == Opcodes.MOVLW):
@@ -105,9 +114,13 @@ class PIC16(Elaboratable):
 			decoder.instruction.eq(instruction),
 			opcode.eq(decoder.opcode),
 			alu.operation.eq(aluOpcode),
-			alu.enable.eq(aluEnable),
+			alu.enable.eq(opEnable),
 			alu.lhs.eq(lhs),
-			alu.rhs.eq(rhs)
+			alu.rhs.eq(rhs),
+			bitmanip.operation.eq(bitOpcode),
+			bitmanip.enable.eq(opEnable),
+			bitmanip.carryIn.eq(carry),
+			bitmanip.value.eq(rhs)
 		]
 		return m
 
@@ -130,6 +143,19 @@ class PIC16(Elaboratable):
 				m.d.comb += result.eq(ALUOpcode.XOR)
 			with m.Default():
 				m.d.comb += result.eq(ALUOpcode.NONE)
+		return result
+
+	def mapBitmanipOpcode(self, m, opcode):
+		result = Signal(BitOpcode, name = "bitOpcode")
+		with m.Switch(opcode):
+			with m.Case(Opcodes.RRF):
+				m.d.comb += result.eq(BitOpcode.ROTR)
+			with m.Case(Opcodes.RLF):
+				m.d.comb += result.eq(BitOpcode.ROTL)
+			with m.Case(Opcodes.SWAPF):
+				m.d.comb += result.eq(BitOpcode.SWAP)
+			with m.Default():
+				m.d.comb += result.eq(BitOpcode.NONE)
 		return result
 
 	def loadsWReg(self, m, opcode):
