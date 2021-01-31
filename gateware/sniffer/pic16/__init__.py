@@ -36,8 +36,8 @@ class PIC16(Elaboratable):
 		opcode = Signal(Opcodes)
 		aluOpcode = self.mapALUOpcode(m, opcode)
 
-		needsWReg = self.needsWReg(m, opcode)
-		needsFReg = self.needsFReg(m, opcode)
+		loadsWReg = self.loadsWReg(m, opcode)
+		loadsFReg = self.loadsFReg(m, opcode)
 		loadsLiteral = self.loadsLiteral(m, opcode)
 		storesWReg = self.storesWReg(m, opcode)
 		storesFReg = self.storesFReg(m, opcode, instruction[7])
@@ -56,10 +56,10 @@ class PIC16(Elaboratable):
 					decoder.instruction.eq(instruction)
 				]
 			with m.Case(2):
-				with m.If(needsWReg == 1):
+				with m.If(loadsWReg == 1):
 					m.d.comb += lhs.eq(self.wreg)
 
-				with m.If(needsFReg == 1):
+				with m.If(loadsFReg == 1):
 					m.d.sync += [
 						self.pAddr.eq(instruction[0:7]),
 						self.pRead.eq(1)
@@ -122,8 +122,8 @@ class PIC16(Elaboratable):
 				m.d.comb += result.eq(ALUOpcode.NONE)
 		return result
 
-	def needsWReg(self, m, opcode):
-		result = Signal(name = "needsWReg")
+	def loadsWReg(self, m, opcode):
+		result = Signal(name = "loadsWReg")
 		with m.Switch(opcode):
 			with m.Case(
 				Opcodes.MOVWF,
@@ -143,8 +143,8 @@ class PIC16(Elaboratable):
 				m.d.comb += result.eq(0)
 		return result
 
-	def needsFReg(self, m, opcode):
-		result = Signal(name = "needsFReg")
+	def loadsFReg(self, m, opcode):
+		result = Signal(name = "loadsFReg")
 		with m.Switch(opcode):
 			with m.Case(
 				Opcodes.ADDWF,
