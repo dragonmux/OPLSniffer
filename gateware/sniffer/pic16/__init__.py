@@ -47,7 +47,7 @@ class PIC16(Elaboratable):
 		loadsWReg = self.loadsWReg(m, opcode)
 		loadsFReg = self.loadsFReg(m, opcode)
 		loadsLiteral = self.loadsLiteral(m, opcode)
-		storesWReg = self.storesWReg(m, opcode)
+		storesWReg = self.storesWReg(m, opcode, instruction[7])
 		storesFReg = self.storesFReg(m, opcode, instruction[7])
 
 		with m.Switch(q):
@@ -222,7 +222,7 @@ class PIC16(Elaboratable):
 				m.d.comb += result.eq(0)
 		return result
 
-	def storesWReg(self, m, opcode):
+	def storesWReg(self, m, opcode, dir):
 		result = Signal(name = "storesWReg")
 		with m.Switch(opcode):
 			with m.Case(
@@ -236,6 +236,19 @@ class PIC16(Elaboratable):
 				Opcodes.XORLW
 			):
 				m.d.comb += result.eq(1)
+			with m.Case(
+				Opcodes.CLRF,
+				Opcodes.DECF,
+				Opcodes.MOVF,
+				Opcodes.COMF,
+				Opcodes.INCF,
+				Opcodes.RRF,
+				Opcodes.RLF,
+				Opcodes.SWAPF,
+				Opcodes.BCF,
+				Opcodes.BSF
+			):
+				m.d.comb += result.eq(~dir)
 			with m.Default():
 				m.d.comb += result.eq(0)
 		return result
