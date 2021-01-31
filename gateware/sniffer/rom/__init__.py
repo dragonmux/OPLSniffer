@@ -11,12 +11,18 @@ class ROM(Elaboratable):
 	def elaborate(self, platform):
 		m = Module()
 		memory = Memory(width = 16, depth = 2 ** 12)
-		rom = memory.read_port(transparent = False)
-		m.submodules.rom = rom
+		writePort = memory.write_port()
+		readPort = memory.read_port(transparent = False)
+		m.submodules += writePort
+		m.submodules.rom = readPort
 
 		m.d.comb += [
-			rom.addr.eq(self.address),
-			self.data.eq(rom.data),
-			rom.en.eq(self.read)
+			writePort.addr.eq(0),
+			writePort.data.eq(0),
+			writePort.en.eq(0),
+
+			readPort.addr.eq(self.address),
+			self.data.eq(readPort.data),
+			readPort.en.eq(self.read)
 		]
 		return m
