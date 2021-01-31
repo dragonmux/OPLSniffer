@@ -29,8 +29,8 @@ def benchSync():
 def loadConst(value, available):
 	for (i, bit) in enumerate(Const(value, unsigned(16))):
 		yield opl.data.eq(bit)
-		#if i == 1:
-		#	assert (yield sniffer.availableCount) == available
+		if i == 2:
+			assert (yield sniffer.availableCount) == available
 		if i == 7:
 			yield opl.load.eq(1)
 		elif i == 15:
