@@ -1,5 +1,5 @@
 from nmigen import Elaboratable, Module, Signal, unsigned
-from .types import Opcodes, ALUOpcode
+from .types import Opcodes, ALUOpcode, BitOpcode
 
 __all__ = ["PIC16"]
 
@@ -15,6 +15,7 @@ class PIC16(Elaboratable):
 
 		self.wreg = Signal(8)
 		self.pc = Signal(12)
+		self.flags = Signal(8)
 
 	def elaborate(self, platform):
 		from .decoder import Decoder
@@ -33,6 +34,8 @@ class PIC16(Elaboratable):
 		rhs = Signal(8)
 		result = Signal(8)
 		aluEnable = Signal()
+
+		carry = self.flags[0]
 
 		opcode = Signal(Opcodes)
 		aluOpcode = self.mapALUOpcode(m, opcode)
@@ -53,6 +56,9 @@ class PIC16(Elaboratable):
 						self.pData.eq(result),
 						self.pWrite.eq(1)
 					]
+
+				with m.If(aluOpcode != ALUOpcode.NONE):
+					m.d.sync += carry.eq(alu.carry)
 
 				m.d.sync += [
 					self.iAddr.eq(self.pc),
