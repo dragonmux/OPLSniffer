@@ -10,6 +10,7 @@ class ALU(Elaboratable):
 		self.result = Signal(8)
 		self.carry = Signal()
 
+		self.enable = Signal()
 		self.operation = Signal(ALUOpcode)
 
 	def elaborate(self, platform):
@@ -18,21 +19,22 @@ class ALU(Elaboratable):
 		rhs = self.rhs
 		result = Signal(9, name = 'answer')
 
-		with m.Switch(self.operation):
-			with m.Case(ALUOpcode.ADD):
-				m.d.sync += result.eq(lhs + rhs)
-			with m.Case(ALUOpcode.SUB):
-				m.d.sync += result.eq(lhs - rhs)
-			with m.Case(ALUOpcode.INC):
-				m.d.sync += result.eq(rhs + 1)
-			with m.Case(ALUOpcode.DEC):
-				m.d.sync += result.eq(rhs - 1)
-			with m.Case(ALUOpcode.AND):
-				m.d.sync += result.eq(lhs & rhs)
-			with m.Case(ALUOpcode.OR):
-				m.d.sync += result.eq(lhs | rhs)
-			with m.Case(ALUOpcode.XOR):
-				m.d.sync += result.eq(lhs ^ rhs)
+		with m.If(self.enable):
+			with m.Switch(self.operation):
+				with m.Case(ALUOpcode.ADD):
+					m.d.sync += result.eq(lhs + rhs)
+				with m.Case(ALUOpcode.SUB):
+					m.d.sync += result.eq(lhs - rhs)
+				with m.Case(ALUOpcode.INC):
+					m.d.sync += result.eq(rhs + 1)
+				with m.Case(ALUOpcode.DEC):
+					m.d.sync += result.eq(rhs - 1)
+				with m.Case(ALUOpcode.AND):
+					m.d.sync += result.eq(lhs & rhs)
+				with m.Case(ALUOpcode.OR):
+					m.d.sync += result.eq(lhs | rhs)
+				with m.Case(ALUOpcode.XOR):
+					m.d.sync += result.eq(lhs ^ rhs)
 
 		m.d.comb += [
 			self.result.eq(result[0:8]),

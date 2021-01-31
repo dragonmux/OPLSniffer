@@ -32,6 +32,7 @@ class PIC16(Elaboratable):
 		lhs = Signal(8)
 		rhs = Signal(8)
 		result = Signal(8)
+		aluEnable = Signal()
 
 		opcode = Signal(Opcodes)
 		aluOpcode = self.mapALUOpcode(m, opcode)
@@ -93,9 +94,8 @@ class PIC16(Elaboratable):
 				]
 
 		m.d.comb += [
-			opcode.eq(decoder.opcode)
-		]
-		m.d.sync += [
+			opcode.eq(decoder.opcode),
+			alu.enable.eq(aluEnable),
 			alu.lhs.eq(lhs),
 			alu.rhs.eq(rhs)
 		]
