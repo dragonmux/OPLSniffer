@@ -8,5 +8,12 @@ class OPLSniffer(Elaboratable):
 		from .pic16 import PIC16
 		m = Module()
 		m.submodules.opl2Sniffer = OPL2Sniffer(platform.request('opl'))
-		m.submodules.processor = PIC16()
+		processor = PIC16()
+		m.submodules.processor = processor
+
+		gpioB = platform.request('gpioB')
+		m.d.comb += [
+			gpioB.o.eq(processor.pData),
+			gpioB.oe.eq(0xFF)
+		]
 		return m
