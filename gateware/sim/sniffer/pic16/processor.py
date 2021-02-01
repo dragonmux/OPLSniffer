@@ -74,7 +74,6 @@ def benchSync():
 	yield
 	assert (yield dut.pRead) == 0
 	assert (yield dut.pWrite) == 0
-
 	# Perform RLF 8,w
 	yield dut.iData.eq(0b00_1101_0000_1000)
 	yield
@@ -90,13 +89,27 @@ def benchSync():
 	assert (yield dut.pRead) == 0
 	assert (yield dut.pWrite) == 0
 
-	# Perform NOP
-	yield dut.iData.eq(0b00_0000_0000_0000)
+	# Perform BSF 4, 5
+	yield dut.iData.eq(0b01_0110_1000_0100)
 	yield
 	assert (yield dut.wreg) == 0
 	assert (yield dut.pWrite) == 0
 	yield
 	assert (yield dut.pWrite) == 0
+	yield
+	yield
+
+	# Perform NOP
+	yield dut.iData.eq(0b00_0000_0000_0000)
+	yield
+	yield
+	yield
+	yield
+
+	# Perform NOP
+	yield dut.iData.eq(0b00_0000_0000_0000)
+	yield
+	yield
 	yield
 	yield
 
