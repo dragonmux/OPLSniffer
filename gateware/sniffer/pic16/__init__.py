@@ -36,6 +36,7 @@ class PIC16(Elaboratable):
 		lhs = Signal(8)
 		rhs = Signal(8)
 		result = Signal(8)
+		targetBit = Signal(3)
 		opEnable = Signal()
 
 		carry = self.flags[0]
@@ -101,6 +102,9 @@ class PIC16(Elaboratable):
 		with m.Elif(loadsLiteral):
 			m.d.comb += rhs.eq(instruction[0:8])
 
+		with m.If((opcode == Opcodes.BCF) | (opcode == Opcodes.BSF)):
+			m.d.comb += targetBit.eq(instruction[7:10])
+
 		with m.If(aluOpcode != ALUOpcode.NONE):
 			m.d.comb += result.eq(alu.result)
 		with m.If(bitOpcode != BitOpcode.NONE):
@@ -118,6 +122,7 @@ class PIC16(Elaboratable):
 			alu.lhs.eq(lhs),
 			alu.rhs.eq(rhs),
 			bitmanip.operation.eq(bitOpcode),
+			bitmanip.targetBit.eq(targetBit),
 			bitmanip.enable.eq(opEnable),
 			bitmanip.carryIn.eq(carry),
 			bitmanip.value.eq(rhs)
@@ -154,6 +159,10 @@ class PIC16(Elaboratable):
 				m.d.comb += result.eq(BitOpcode.ROTL)
 			with m.Case(Opcodes.SWAPF):
 				m.d.comb += result.eq(BitOpcode.SWAP)
+			with m.Case(Opcodes.BCF):
+				m.d.comb += result.eq(BitOpcode.BITCLR)
+			with m.Case(Opcodes.BSF):
+				m.d.comb += result.eq(BitOpcode.BITSET)
 			with m.Default():
 				m.d.comb += result.eq(BitOpcode.NONE)
 		return result
@@ -197,6 +206,8 @@ class PIC16(Elaboratable):
 				Opcodes.RLF,
 				Opcodes.RRF,
 				Opcodes.SWAPF,
+				Opcodes.BCF,
+				Opcodes.BSF,
 				Opcodes.BTFSC,
 				Opcodes.BTFSS
 			):
