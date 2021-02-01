@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module, Signal, Cat
+from nmigen import Elaboratable, Module, Signal, Cat, Array
 from .types import BitOpcode
 
 __all__ = ["Bitmanip"]
@@ -7,6 +7,7 @@ class Bitmanip(Elaboratable):
 	def __init__(self):
 		self.value = Signal(8)
 		self.carryIn = Signal()
+		self.targetBit = Signal(3)
 		self.result = Signal(8)
 		self.carryOut = Signal()
 
@@ -17,6 +18,7 @@ class Bitmanip(Elaboratable):
 		m = Module()
 		value = self.value
 		result = Signal(9, name = 'answer')
+		resultBits = Array((bit for bit in result))
 
 		with m.If(self.enable):
 			with m.Switch(self.operation):
@@ -26,6 +28,16 @@ class Bitmanip(Elaboratable):
 					m.d.sync += result.eq(Cat(self.carryIn, value))
 				with m.Case(BitOpcode.SWAP):
 					m.d.sync += result.eq(Cat(value[4:8], value[0:4], 0))
+				with m.Case(BitOpcode.BITCLR):
+					m.d.sync += [
+						result.eq(value),
+						resultBits[self.targetBit].eq(0)
+					]
+				with m.Case(BitOpcode.BITSET):
+					m.d.sync += [
+						result.eq(value),
+						resultBits[self.targetBit].eq(1)
+					]
 
 		m.d.comb += [
 			self.result.eq(result[0:8]),

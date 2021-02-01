@@ -52,3 +52,5 @@ class BitOpcode(Enum):
 	ROTR = 1
 	ROTL = 2
 	SWAP = 3
+	BITCLR = 4
+	BITSET = 5
