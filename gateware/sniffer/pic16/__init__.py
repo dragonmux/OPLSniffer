@@ -281,11 +281,14 @@ class PIC16(Elaboratable):
 				Opcodes.INCF,
 				Opcodes.RRF,
 				Opcodes.RLF,
-				Opcodes.SWAPF,
+				Opcodes.SWAPF
+			):
+				m.d.comb += result.eq(dir)
+			with m.Case(
 				Opcodes.BCF,
 				Opcodes.BSF
 			):
-				m.d.comb += result.eq(dir)
+				m.d.comb += result.eq(1)
 			with m.Default():
 				m.d.comb += result.eq(0)
 		return result
