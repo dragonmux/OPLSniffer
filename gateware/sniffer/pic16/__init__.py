@@ -13,6 +13,8 @@ class PIC16(Elaboratable):
 		self.pRead = Signal()
 		self.pWrite = Signal()
 
+		self.pcLatchHigh = Signal(8)
+
 		self.wreg = Signal(8)
 		self.pc = Signal(12)
 		self.flags = Signal(8)
@@ -21,6 +23,7 @@ class PIC16(Elaboratable):
 		from .decoder import Decoder
 		from .alu import ALU
 		from .bitmanip import Bitmanip
+		from .callStack import CallStack
 		m = Module()
 		decoder = Decoder()
 		m.submodules.decoder = decoder
@@ -28,6 +31,8 @@ class PIC16(Elaboratable):
 		m.submodules.alu = alu
 		bitmanip = Bitmanip()
 		m.submodules.bitmanip = bitmanip
+		callStack = CallStack()
+		m.submodules.callStack = callStack
 
 		q = Signal(unsigned(2))
 		m.d.sync += q.eq(q + 1)
@@ -50,6 +55,9 @@ class PIC16(Elaboratable):
 		loadsLiteral = self.loadsLiteral(m, opcode)
 		storesWReg = self.storesWReg(m, opcode, instruction[7])
 		storesFReg = self.storesFReg(m, opcode, instruction[7])
+		changesFlow = self.changesFlow(m, opcode)
+		loadPCLatchHigh = self.loadPCLatchHigh(m, opcode)
+		isReturn = self.isReturn(m, opcode)
 
 		with m.Switch(q):
 			with m.Case(0):
@@ -81,16 +89,37 @@ class PIC16(Elaboratable):
 				with m.If(loadsFReg):
 					m.d.sync += [
 						self.pAddr.eq(instruction[0:7]),
-						self.pRead.eq(1),
+						self.pRead.eq(1)
 					]
 
 				m.d.sync += opEnable.eq(1)
+				with m.If(opcode == Opcodes.CALL):
+					m.d.sync += [
+						callStack.valueIn.eq(self.pc + 1),
+						callStack.push.eq(1)
+					]
+				with m.Elif(isReturn):
+					m.d.sync += [
+						self.pc.eq(callStack.valueOut),
+						callStack.pop.eq(1)
+					]
+
+				with m.If(loadPCLatchHigh):
+					m.d.sync += [
+						self.pc[0:11].eq(instruction[0:11]),
+						self.pc[11:].eq(self.pcLatchHigh[3:5])
+					]
 			with m.Case(3):
 				m.d.sync += [
 					opEnable.eq(0),
-					self.pRead.eq(0),
-					self.pc.eq(self.pc + 1)
+					self.pRead.eq(0)
 				]
+				with m.If(~changesFlow):
+					m.d.sync += self.pc.eq(self.pc + 1)
+				with m.Elif(opcode == Opcodes.CALL):
+					m.d.sync += callStack.push.eq(0)
+				with m.Elif(isReturn):
+					m.d.sync += callStack.pop.eq(0)
 
 		with m.If(loadsWReg):
 			m.d.comb += lhs.eq(self.wreg)
@@ -287,6 +316,47 @@ class PIC16(Elaboratable):
 			with m.Case(
 				Opcodes.BCF,
 				Opcodes.BSF
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
+		return result
+
+	def changesFlow(self, m, opcode):
+		result = Signal(name = "changesFlow")
+		with m.Switch(opcode):
+			# Need to handle bit test f skip if <condition>..?
+			with m.Case(
+				Opcodes.CALL,
+				Opcodes.GOTO,
+				Opcodes.RETFIE,
+				Opcodes.RETLW,
+				Opcodes.RETURN
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
+		return result
+
+	def isReturn(self, m, opcode):
+		result = Signal(name = "isReturn")
+		with m.Switch(opcode):
+			with m.Case(
+				Opcodes.RETFIE,
+				Opcodes.RETLW,
+				Opcodes.RETURN
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
+		return result
+
+	def loadPCLatchHigh(self, m, opcode):
+		result = Signal(name = "loadPCLatch")
+		with m.Switch(opcode):
+			with m.Case(
+				Opcodes.CALL,
+				Opcodes.GOTO
 			):
 				m.d.comb += result.eq(1)
 			with m.Default():
