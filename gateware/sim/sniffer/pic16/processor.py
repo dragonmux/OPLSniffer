@@ -16,6 +16,8 @@ dut = PIC16()
 
 def benchSync():
 	assert (yield dut.iRead) == 0
+	assert (yield dut.iAddr) == 0
+	assert (yield dut.pc) == 0
 	# Perform NOP
 	yield dut.iData.eq(0b00_0000_0000_0000)
 	yield
@@ -107,6 +109,33 @@ def benchSync():
 	yield
 
 	# Perform NOP
+	yield dut.iData.eq(0b00_0000_0000_0000)
+	yield
+	yield
+	yield
+	yield
+
+	# Perform CALL 0x015
+	assert (yield dut.iAddr) == 9
+	assert (yield dut.pc) == 9
+	yield dut.iData.eq(0b10_0000_0001_0101)
+	yield
+	yield
+	yield
+	yield
+
+	# Perform RETURN
+	assert (yield dut.iAddr) == 0x015
+	assert (yield dut.pc) == 0x015
+	yield dut.iData.eq(0b00_0000_0000_1000)
+	yield
+	yield
+	yield
+	yield
+
+	# Perform NOP
+	assert (yield dut.iAddr) == 10
+	assert (yield dut.pc) == 10
 	yield dut.iData.eq(0b00_0000_0000_0000)
 	yield
 	yield
