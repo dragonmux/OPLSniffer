@@ -9,8 +9,9 @@ class PIC16(Elaboratable):
 		self.iData = Signal(14)
 		self.iRead = Signal()
 		self.pAddr = Signal(7)
-		self.pData = Signal(8)
+		self.pReadData = Signal(8)
 		self.pRead = Signal()
+		self.pWriteData = Signal(8)
 		self.pWrite = Signal()
 
 		self.pcLatchHigh = Signal(8)
@@ -66,7 +67,7 @@ class PIC16(Elaboratable):
 				with m.Elif(storesFReg):
 					m.d.sync += [
 						self.pAddr.eq(instruction[0:7]),
-						self.pData.eq(result),
+						self.pWriteData.eq(result),
 						self.pWrite.eq(1)
 					]
 
@@ -127,7 +128,7 @@ class PIC16(Elaboratable):
 			m.d.comb += lhs.eq(0)
 
 		with m.If(loadsFReg):
-			m.d.comb += rhs.eq(self.pData)
+			m.d.comb += rhs.eq(self.pReadData)
 		with m.Elif(loadsLiteral):
 			m.d.comb += rhs.eq(instruction[0:8])
 
