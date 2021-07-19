@@ -45,7 +45,8 @@ class PIC16(Elaboratable):
 		targetBit = Signal(3)
 		opEnable = Signal()
 		skip = Signal()
-		skipNext = Signal()
+		pause = Signal()
+		pcNext = Signal.like(self.pc)
 
 		carry = self.flags[0]
 
@@ -78,19 +79,24 @@ class PIC16(Elaboratable):
 				with m.If(bitOpcode != BitOpcode.NONE):
 					m.d.sync += carry.eq(bitmanip.carryOut)
 
-				m.d.sync += [
-					self.iAddr.eq(self.pc + skip),
-					self.iRead.eq(1),
-					self.pc.eq(self.pc + skip)
-				]
+				with m.If((opcode == Opcodes.INCFSZ) | (opcode == Opcodes.DECFSZ)):
+					m.d.sync += pause.eq(skip)
+
+				m.d.comb += self.iRead.eq(1),
+				m.d.sync += self.pc.eq(self.pc)
 			with m.Case(1):
-				m.d.sync += [
-					self.pWrite.eq(0),
-					self.iRead.eq(0),
-					instruction.eq(self.iData),
-					self.pAddr.eq(self.iData[0:7])
-				]
+				with m.If(pause):
+					m.d.sync += instruction.eq(0), # Load a NOP if we're entering a pause cycle.
+				with m.Else():
+					m.d.sync += [
+						instruction.eq(self.iData),
+						self.pAddr.eq(self.iData[0:7])
+					]
+
+				m.d.sync += self.pWrite.eq(0)
 			with m.Case(2):
+				with m.If(pause):
+					m.d.sync += pause.eq(0)
 				with m.If(loadsFReg):
 					m.d.comb += self.pRead.eq(1)
 
@@ -111,14 +117,15 @@ class PIC16(Elaboratable):
 						self.pc[0:11].eq(instruction[0:11]),
 						self.pc[11:].eq(self.pcLatchHigh[3:5])
 					]
+				with m.Elif(~changesFlow):
+					m.d.sync += self.pc.eq(pcNext)
 			with m.Case(3):
-				m.d.sync += opEnable.eq(0)
-				with m.If(~changesFlow):
-					m.d.sync += self.pc.eq(self.pc + 1)
-				with m.Elif(opcode == Opcodes.CALL):
+				with m.If(opcode == Opcodes.CALL):
 					m.d.sync += callStack.push.eq(0)
 				with m.Elif(isReturn):
 					m.d.sync += callStack.pop.eq(0)
+
+				m.d.sync += opEnable.eq(0)
 
 		with m.If(loadsWReg):
 			m.d.comb += lhs.eq(self.wreg)
@@ -144,6 +151,9 @@ class PIC16(Elaboratable):
 		with m.Elif(opcode == Opcodes.MOVWF):
 			m.d.comb += result.eq(self.wreg)
 
+		with m.If(~changesFlow):
+			m.d.comb += pcNext.eq(self.pc + 1)
+
 		m.d.comb += [
 			decoder.instruction.eq(instruction),
 			opcode.eq(decoder.opcode),
@@ -151,13 +161,13 @@ class PIC16(Elaboratable):
 			alu.enable.eq(opEnable),
 			alu.lhs.eq(lhs),
 			alu.rhs.eq(rhs),
-			skipNext.eq(alu.result == 0),
+			skip.eq(alu.result == 0),
 			bitmanip.operation.eq(bitOpcode),
 			bitmanip.targetBit.eq(targetBit),
 			bitmanip.enable.eq(opEnable),
 			bitmanip.carryIn.eq(carry),
 			bitmanip.value.eq(rhs),
-			skip.eq(skipNext & ((opcode == Opcodes.INCFSZ) | (opcode == Opcodes.DECFSZ)))
+			self.iAddr.eq(self.pc)
 		]
 		return m
 
