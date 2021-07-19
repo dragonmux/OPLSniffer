@@ -158,6 +158,7 @@ class Rebooter(Elaboratable):
 		m.d.sync += warmbootNow.eq(warmbootRequest)
 		m.d.comb += self.rebootTriggered.eq(warmbootNow)
 
+		# This is not generated when this elaboratable is sim'd.
 		if platform is not None:
 			m.submodules += Instance(
 				'SB_WARMBOOT',
@@ -190,6 +191,12 @@ class IOWO(Elaboratable):
 		0x2803, # GOTO      0x003 - Once we've gone through 100*100*100 iterations,
 				#                   jump back to the instruction that reloads the last counter
 	]
+
+	def __init__(self, *, sim = False):
+		if sim:
+			self.ledR = Signal()
+			self.ledG = Signal()
+			self.userBtn = Signal()
 
 	def elaborate(self, platform):
 		from sniffer.pic16 import PIC16
@@ -226,17 +233,25 @@ class IOWO(Elaboratable):
 				ram.write.eq(processor.pWrite),
 			]
 
-		ledR = platform.request('led_r')
-		m.d.comb += [
-			ledR.o.eq(gpio[0])
-		]
+		# This is not generated when this elaboratable is sim'd.
+		if platform is not None:
+			ledR = platform.request('led_r')
+			m.d.comb += [
+				ledR.o.eq(gpio[0])
+			]
 
-		ledG = platform.request('led_g')
-		userBtn = platform.request('button', 0)
-		m.d.comb += [
-			rebooter.buttonInput.eq(userBtn),
-			ledG.eq(rebooter.willReboot)
-		]
+			ledG = platform.request('led_g')
+			userBtn = platform.request('button', 0)
+			m.d.comb += [
+				rebooter.buttonInput.eq(userBtn),
+				ledG.eq(rebooter.willReboot)
+			]
+		else:
+			m.d.comb += [
+				self.ledR.eq(gpio[0]),
+				rebooter.buttonInput.eq(self.userBtn),
+				self.ledG.eq(rebooter.willReboot),
+			]
 		return m
 
 if __name__ == '__main__':
