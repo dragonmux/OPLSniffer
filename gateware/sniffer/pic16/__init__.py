@@ -44,6 +44,8 @@ class PIC16(Elaboratable):
 		result = Signal(8)
 		targetBit = Signal(3)
 		opEnable = Signal()
+		skip = Signal()
+		skipNext = Signal()
 
 		carry = self.flags[0]
 
@@ -77,8 +79,9 @@ class PIC16(Elaboratable):
 					m.d.sync += carry.eq(bitmanip.carryOut)
 
 				m.d.sync += [
-					self.iAddr.eq(self.pc),
-					self.iRead.eq(1)
+					self.iAddr.eq(self.pc + skip),
+					self.iRead.eq(1),
+					self.pc.eq(self.pc + skip)
 				]
 			with m.Case(1):
 				m.d.sync += [
@@ -148,11 +151,13 @@ class PIC16(Elaboratable):
 			alu.enable.eq(opEnable),
 			alu.lhs.eq(lhs),
 			alu.rhs.eq(rhs),
+			skipNext.eq(alu.result == 0),
 			bitmanip.operation.eq(bitOpcode),
 			bitmanip.targetBit.eq(targetBit),
 			bitmanip.enable.eq(opEnable),
 			bitmanip.carryIn.eq(carry),
-			bitmanip.value.eq(rhs)
+			bitmanip.value.eq(rhs),
+			skip.eq(skipNext & ((opcode == Opcodes.INCFSZ) | (opcode == Opcodes.DECFSZ)))
 		]
 		return m
 
@@ -277,9 +282,11 @@ class PIC16(Elaboratable):
 			with m.Case(
 				Opcodes.CLRF,
 				Opcodes.DECF,
+				Opcodes.DECFSZ,
 				Opcodes.MOVF,
 				Opcodes.COMF,
 				Opcodes.INCF,
+				Opcodes.INCFSZ,
 				Opcodes.RRF,
 				Opcodes.RLF,
 				Opcodes.SWAPF,
@@ -299,6 +306,7 @@ class PIC16(Elaboratable):
 				Opcodes.CLRF,
 				Opcodes.SUBWF,
 				Opcodes.DECF,
+				Opcodes.DECFSZ,
 				Opcodes.IORWF,
 				Opcodes.ANDWF,
 				Opcodes.XORWF,
@@ -306,6 +314,7 @@ class PIC16(Elaboratable):
 				Opcodes.MOVF,
 				Opcodes.COMF,
 				Opcodes.INCF,
+				Opcodes.INCFSZ,
 				Opcodes.RRF,
 				Opcodes.RLF,
 				Opcodes.SWAPF
