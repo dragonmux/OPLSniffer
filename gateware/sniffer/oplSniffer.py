@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module
+from nmigen import Elaboratable, Module, Signal, DomainRenamer, ClockSignal, ResetSignal
 
 __all__ = ["OPLSniffer"]
 
@@ -9,10 +9,20 @@ class OPLSniffer(Elaboratable):
 		from .rom import ROM
 		m = Module()
 		m.submodules.opl2Sniffer = OPL2Sniffer(platform.request('opl'))
-		processor = PIC16()
+		processor = DomainRenamer({'sync': 'processor'})(PIC16())
 		m.submodules.processor = processor
 		rom = ROM()
 		m.submodules.rom = rom
+
+		procReady = Signal(range(3))
+
+		m.d.sync += [
+			procReady.eq(procReady + ~procReady[1])
+		]
+		m.d.comb += [
+			ClockSignal('processor').eq(ClockSignal()),
+			ResetSignal('processor').eq(~procReady[1])
+		]
 
 		m.d.comb += [
 			rom.address.eq(processor.iAddr),
