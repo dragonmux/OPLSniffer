@@ -3,15 +3,14 @@
 from sys import argv, path, exit
 from pathlib import Path
 
-from nmigen.hdl.ast import ClockSignal, ResetSignal
-from nmigen.hdl.cd import ClockDomain
-from nmigen.hdl.xfrm import DomainRenamer, ResetInserter
-
 gatewarePath = Path(argv[0]).resolve()
 if (gatewarePath.parent / 'sniffer').is_dir():
 		path.insert(0, str(gatewarePath.parent))
 
-from nmigen import Elaboratable, Module, Signal, Memory, Cat, Repl, Instance
+from nmigen import (
+	Elaboratable, Module, Signal, Memory, Cat, Repl, Instance,
+	ClockDomain, ClockSignal, ResetSignal, DomainRenamer
+)
 from nmigen_boards.icebreaker_bitsy import ICEBreakerBitsyPlatform
 
 class RAM(Elaboratable):
