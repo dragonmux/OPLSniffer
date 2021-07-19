@@ -49,6 +49,7 @@ class PIC16(Elaboratable):
 		pcNext = Signal.like(self.pc)
 
 		carry = self.flags[0]
+		zero = self.flags[1]
 
 		opcode = Signal(Opcodes)
 		aluOpcode = self.mapALUOpcode(m, opcode)
@@ -62,6 +63,7 @@ class PIC16(Elaboratable):
 		changesFlow = self.changesFlow(m, opcode)
 		loadPCLatchHigh = self.loadPCLatchHigh(m, opcode)
 		isReturn = self.isReturn(m, opcode)
+		storesZeroFlag = self.storesZeroFlag(m, opcode)
 
 		with m.Switch(q):
 			with m.Case(0):
@@ -73,6 +75,8 @@ class PIC16(Elaboratable):
 						self.pWriteData.eq(result),
 						self.pWrite.eq(1)
 					]
+				with m.If(storesZeroFlag):
+					m.d.sync += zero.eq(skip)
 
 				with m.If(aluOpcode != ALUOpcode.NONE):
 					m.d.sync += carry.eq(alu.carry)
@@ -374,6 +378,32 @@ class PIC16(Elaboratable):
 			with m.Case(
 				Opcodes.CALL,
 				Opcodes.GOTO
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
+		return result
+
+	def storesZeroFlag(self, m, opcode):
+		result = Signal(name = "storesZeroFlag")
+		with m.Switch(opcode):
+			with m.Case(
+				Opcodes.CLRW,
+				Opcodes.CLRF,
+				Opcodes.SUBWF,
+				Opcodes.DECF,
+				Opcodes.IORWF,
+				Opcodes.ANDWF,
+				Opcodes.XORWF,
+				Opcodes.ADDWF,
+				Opcodes.MOVF,
+				Opcodes.COMF,
+				Opcodes.INCF,
+				Opcodes.ADDLW,
+				Opcodes.SUBLW,
+				Opcodes.ANDLW,
+				Opcodes.IORLW,
+				Opcodes.XORLW
 			):
 				m.d.comb += result.eq(1)
 			with m.Default():
