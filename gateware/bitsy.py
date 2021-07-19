@@ -3,6 +3,10 @@
 from sys import argv, path, exit
 from pathlib import Path
 
+from nmigen.hdl.ast import ClockSignal, ResetSignal
+from nmigen.hdl.cd import ClockDomain
+from nmigen.hdl.xfrm import DomainRenamer, ResetInserter
+
 gatewarePath = Path(argv[0]).resolve()
 if (gatewarePath.parent / 'sniffer').is_dir():
 		path.insert(0, str(gatewarePath.parent))
@@ -174,7 +178,7 @@ class IOWO(Elaboratable):
 		0x3064, # MOVLW     100
 		0x0090, # MOVWF     0x10
 		0x0091, # MOVWF     0x11
-		0x0092, # MOVWF     0x12
+		0x0092, # MOVWF     0x12 - This should be address 3
 
 		0x3001, # MOVLW     0x01
 		0x0680, # XORWF     0x00,f - Toggles the red LED on/off
@@ -206,7 +210,8 @@ class IOWO(Elaboratable):
 		from sniffer.pic16 import PIC16
 		from sniffer.rom import ROM
 		m = Module()
-		m.submodules.processor = processor = PIC16()
+		m.domains.processor = ClockDomain()
+		m.submodules.processor = processor = DomainRenamer({'sync': 'processor'})(PIC16())
 		# This is not generated when this elaboratable is sim'd.
 		if platform is not None:
 			m.submodules.rom = rom = ROM()
@@ -229,10 +234,18 @@ class IOWO(Elaboratable):
 				self.read.eq(processor.iRead),
 			]
 
+		ready = Signal(range(3))
 		gpio = Signal(8)
 		read = Signal()
 
-		m.d.sync += read.eq(processor.pRead)
+		m.d.sync += [
+			read.eq(processor.pRead),
+			ready.eq(ready + ~ready[1])
+		]
+		m.d.comb += [
+			ClockSignal('processor').eq(ClockSignal()),
+			ResetSignal('processor').eq(~ready[1])
+		]
 
 		with m.If(processor.pAddr == 0):
 			with m.If(processor.pWrite):
