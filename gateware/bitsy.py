@@ -198,22 +198,36 @@ class IOWO(Elaboratable):
 			self.ledG = Signal()
 			self.userBtn = Signal()
 
+			self.address = Signal(12)
+			self.data = Signal(16)
+			self.read = Signal()
+
 	def elaborate(self, platform):
 		from sniffer.pic16 import PIC16
 		from sniffer.rom import ROM
 		m = Module()
 		m.submodules.processor = processor = PIC16()
-		m.submodules.rom = rom = ROM()
+		# This is not generated when this elaboratable is sim'd.
+		if platform is not None:
+			m.submodules.rom = rom = ROM()
 		m.submodules.rebooter = rebooter = Rebooter(longCounterWidth = 23, buttonInverted = False)
 		m.submodules.ram = ram = RAM()
 
-		rom.contents.init = IOWO.program
+		# This is not generated when this elaboratable is sim'd.
+		if platform is not None:
+			rom.contents.init = IOWO.program
 
-		m.d.comb += [
-			rom.address.eq(processor.iAddr),
-			processor.iData.eq(rom.data),
-			rom.read.eq(processor.iRead)
-		]
+			m.d.comb += [
+				rom.address.eq(processor.iAddr),
+				processor.iData.eq(rom.data),
+				rom.read.eq(processor.iRead),
+			]
+		else:
+			m.d.comb += [
+				self.address.eq(processor.iAddr),
+				processor.iData.eq(self.data),
+				self.read.eq(processor.iRead),
+			]
 
 		gpio = Signal(8)
 
