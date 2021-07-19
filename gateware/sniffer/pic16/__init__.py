@@ -163,9 +163,9 @@ class PIC16(Elaboratable):
 				m.d.comb += result.eq(ALUOpcode.ADD)
 			with m.Case(Opcodes.SUBLW, Opcodes.SUBWF):
 				m.d.comb += result.eq(ALUOpcode.SUB)
-			with m.Case(Opcodes.INCF):
+			with m.Case(Opcodes.INCF, Opcodes.INCFSZ):
 				m.d.comb += result.eq(ALUOpcode.INC)
-			with m.Case(Opcodes.DECF):
+			with m.Case(Opcodes.DECF, Opcodes.DECFSZ):
 				m.d.comb += result.eq(ALUOpcode.DEC)
 			with m.Case(Opcodes.ANDLW, Opcodes.ANDWF):
 				m.d.comb += result.eq(ALUOpcode.AND)
