@@ -84,14 +84,12 @@ class PIC16(Elaboratable):
 				m.d.sync += [
 					self.pWrite.eq(0),
 					self.iRead.eq(0),
-					instruction.eq(self.iData)
+					instruction.eq(self.iData),
+					self.pAddr.eq(self.iData[0:7])
 				]
 			with m.Case(2):
 				with m.If(loadsFReg):
-					m.d.sync += [
-						self.pAddr.eq(instruction[0:7]),
-						self.pRead.eq(1)
-					]
+					m.d.comb += self.pRead.eq(1)
 
 				m.d.sync += opEnable.eq(1)
 				with m.If(opcode == Opcodes.CALL):
@@ -111,10 +109,7 @@ class PIC16(Elaboratable):
 						self.pc[11:].eq(self.pcLatchHigh[3:5])
 					]
 			with m.Case(3):
-				m.d.sync += [
-					opEnable.eq(0),
-					self.pRead.eq(0)
-				]
+				m.d.sync += opEnable.eq(0)
 				with m.If(~changesFlow):
 					m.d.sync += self.pc.eq(self.pc + 1)
 				with m.Elif(opcode == Opcodes.CALL):
