@@ -54,7 +54,7 @@ def benchSync():
 	yield
 	assert (yield dut.pRead) == 0
 	assert (yield dut.iRead) == 0
-	yield dut.pData.eq(0x20)
+	yield dut.pReadData.eq(0x20)
 	yield
 	assert (yield dut.pRead) == 1
 	yield
@@ -66,11 +66,11 @@ def benchSync():
 	assert (yield dut.wreg) == 0x24
 	assert (yield dut.iRead) == 1
 	assert (yield dut.pWrite) == 1
-	assert (yield dut.pData) == 0x44
+	assert (yield dut.pWriteData) == 0x44
 	yield
 	assert (yield dut.iRead) == 0
 	assert (yield dut.pWrite) == 0
-	yield dut.pData.eq(0x0F)
+	yield dut.pReadData.eq(0x0F)
 	yield
 	assert (yield dut.pRead) == 1
 	yield
@@ -80,11 +80,11 @@ def benchSync():
 	yield dut.iData.eq(0b00_1101_0000_1000)
 	yield
 	assert (yield dut.pWrite) == 1
-	assert (yield dut.pData) == 0xF0
+	assert (yield dut.pWriteData) == 0xF0
 	yield
 	assert (yield dut.iRead) == 0
 	assert (yield dut.pWrite) == 0
-	yield dut.pData.eq(0x80)
+	yield dut.pReadData.eq(0x80)
 	yield
 	assert (yield dut.pRead) == 1
 	yield
@@ -116,28 +116,28 @@ def benchSync():
 	yield
 
 	# Perform CALL 0x015
-	assert (yield dut.iAddr) == 9
-	assert (yield dut.pc) == 9
 	yield dut.iData.eq(0b10_0000_0001_0101)
 	yield
+	assert (yield dut.iAddr) == 9
+	assert (yield dut.pc) == 9
 	yield
 	yield
 	yield
 
 	# Perform RETURN
-	assert (yield dut.iAddr) == 0x015
-	assert (yield dut.pc) == 0x015
 	yield dut.iData.eq(0b00_0000_0000_1000)
 	yield
+	assert (yield dut.iAddr) == 0x015
+	assert (yield dut.pc) == 0x015
 	yield
 	yield
 	yield
 
 	# Perform NOP
-	assert (yield dut.iAddr) == 10
-	assert (yield dut.pc) == 10
 	yield dut.iData.eq(0b00_0000_0000_0000)
 	yield
+	assert (yield dut.iAddr) == 10
+	assert (yield dut.pc) == 10
 	yield
 	yield
 	yield
