@@ -138,6 +138,8 @@ class PIC16(Elaboratable):
 			m.d.comb += result.eq(0)
 		with m.Elif(opcode == Opcodes.MOVLW):
 			m.d.comb += result.eq(rhs)
+		with m.Elif(opcode == Opcodes.MOVWF):
+			m.d.comb += result.eq(self.wreg)
 
 		m.d.comb += [
 			decoder.instruction.eq(instruction),
