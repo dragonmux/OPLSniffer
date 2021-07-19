@@ -230,19 +230,22 @@ class IOWO(Elaboratable):
 			]
 
 		gpio = Signal(8)
+		read = Signal()
+
+		m.d.sync += read.eq(processor.pRead)
 
 		with m.If(processor.pAddr == 0):
 			with m.If(processor.pWrite):
 				m.d.sync += gpio.eq(processor.pWriteData)
-			with m.If(processor.pRead):
+			with m.If(read):
 				m.d.comb += processor.pReadData.eq(gpio)
-		with m.Elif(processor.pAddr[3:] == 1):
+		with m.Elif(processor.pAddr[4:] == 1):
 			with m.If(processor.pWrite):
 				m.d.comb += ram.writeData.eq(processor.pWriteData)
-			with m.If(processor.pRead):
+			with m.If(read):
 				m.d.comb += processor.pReadData.eq(ram.readData)
 			m.d.comb += [
-				ram.address.eq(processor.pAddr[:3]),
+				ram.address.eq(processor.pAddr[:4]),
 				ram.read.eq(processor.pRead),
 				ram.write.eq(processor.pWrite),
 			]
