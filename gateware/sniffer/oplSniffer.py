@@ -14,6 +14,7 @@ class OPLSniffer(Elaboratable):
 		rom = ROM()
 		m.submodules.rom = rom
 
+		iBus = processor.iBus
 		procReady = Signal(range(3))
 
 		m.d.sync += [
@@ -25,9 +26,9 @@ class OPLSniffer(Elaboratable):
 		]
 
 		m.d.comb += [
-			rom.address.eq(processor.iAddr),
-			processor.iData.eq(rom.data),
-			rom.read.eq(processor.iRead)
+			rom.address.eq(iBus.address),
+			iBus.data.eq(rom.data),
+			rom.read.eq(iBus.read)
 		]
 
 		gpioB = platform.request('gpioB')
