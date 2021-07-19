@@ -1,13 +1,12 @@
 from nmigen import Elaboratable, Module, Signal, unsigned
 from .types import Opcodes, ALUOpcode, BitOpcode
+from .busses import *
 
 __all__ = ["PIC16"]
 
 class PIC16(Elaboratable):
 	def __init__(self):
-		self.iAddr = Signal(12)
-		self.iData = Signal(14)
-		self.iRead = Signal()
+		self.iBus = InstructionBus()
 		self.pAddr = Signal(7)
 		self.pReadData = Signal(8)
 		self.pRead = Signal()
@@ -86,15 +85,15 @@ class PIC16(Elaboratable):
 				with m.If((opcode == Opcodes.INCFSZ) | (opcode == Opcodes.DECFSZ)):
 					m.d.sync += pause.eq(skip)
 
-				m.d.comb += self.iRead.eq(1),
+				m.d.comb += self.iBus.read.eq(1),
 				m.d.sync += self.pc.eq(self.pc)
 			with m.Case(1):
 				with m.If(pause):
 					m.d.sync += instruction.eq(0), # Load a NOP if we're entering a pause cycle.
 				with m.Else():
 					m.d.sync += [
-						instruction.eq(self.iData),
-						self.pAddr.eq(self.iData[0:7])
+						instruction.eq(self.iBus.data),
+						self.pAddr.eq(self.iBus.data[0:7])
 					]
 
 				m.d.sync += self.pWrite.eq(0)
@@ -171,7 +170,7 @@ class PIC16(Elaboratable):
 			bitmanip.enable.eq(opEnable),
 			bitmanip.carryIn.eq(carry),
 			bitmanip.value.eq(rhs),
-			self.iAddr.eq(self.pc)
+			self.iBus.address.eq(self.pc)
 		]
 		return m
 

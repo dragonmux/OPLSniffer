@@ -217,20 +217,22 @@ class IOWO(Elaboratable):
 		m.submodules.rebooter = rebooter = Rebooter(longCounterWidth = 23, buttonInverted = False)
 		m.submodules.ram = ram = RAM()
 
+		iBus = processor.iBus
+
 		# This is not generated when this elaboratable is sim'd.
 		if platform is not None:
 			rom.contents.init = IOWO.program
 
 			m.d.comb += [
-				rom.address.eq(processor.iAddr),
-				processor.iData.eq(rom.data),
-				rom.read.eq(processor.iRead),
+				rom.address.eq(iBus.address),
+				iBus.data.eq(rom.data),
+				rom.read.eq(iBus.read),
 			]
 		else:
 			m.d.comb += [
-				self.address.eq(processor.iAddr),
-				processor.iData.eq(self.data),
-				self.read.eq(processor.iRead),
+				self.address.eq(iBus.address),
+				iBus.data.eq(self.data),
+				self.read.eq(iBus.read),
 			]
 
 		ready = Signal(range(3))
