@@ -23,6 +23,6 @@ class OPLSniffer(Elaboratable):
 		gpioB = platform.request('gpioB')
 		m.d.comb += [
 			gpioB.o.eq(processor.pData),
-			gpioB.oe.eq(0xFF)
+			gpioB.oe.eq(1)
 		]
 		return m
