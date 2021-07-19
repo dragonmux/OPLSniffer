@@ -8,9 +8,11 @@ class ROM(Elaboratable):
 		self.address = Signal(12)
 		self.read = Signal()
 
+		self.contents = Memory(width = 16, depth = 2 ** 12)
+
 	def elaborate(self, platform):
 		m = Module()
-		memory = Memory(width = 16, depth = 2 ** 12)
+		memory = self.contents
 		writePort = memory.write_port()
 		readPort = memory.read_port(transparent = False)
 		m.submodules += writePort
