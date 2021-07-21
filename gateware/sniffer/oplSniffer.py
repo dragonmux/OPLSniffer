@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module, Signal, DomainRenamer, ClockSignal, ResetSignal
+from nmigen import Elaboratable, Module, Signal, ClockDomain, DomainRenamer, ClockSignal, ResetSignal
 
 __all__ = ["OPLSniffer"]
 
@@ -8,6 +8,7 @@ class OPLSniffer(Elaboratable):
 		from .pic16 import PIC16
 		from .rom import ROM
 		m = Module()
+		m.domains.processor = ClockDomain()
 		m.submodules.opl2Sniffer = OPL2Sniffer(platform.request('opl'))
 		processor = DomainRenamer({'sync': 'processor'})(PIC16())
 		m.submodules.processor = processor
@@ -33,7 +34,8 @@ class OPLSniffer(Elaboratable):
 
 		gpioB = platform.request('gpioB')
 		m.d.comb += [
-			gpioB.o.eq(processor.pData),
-			gpioB.oe.eq(1)
+			gpioB.o.eq(processor.pBus.writeData),
+			processor.pBus.readData.eq(gpioB.i),
+			gpioB.oe.eq(processor.pBus.write)
 		]
 		return m
