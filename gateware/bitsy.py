@@ -240,7 +240,7 @@ class IOWO(Elaboratable):
 		read = Signal()
 
 		m.d.sync += [
-			read.eq(processor.pRead),
+			read.eq(processor.pBus.read),
 			ready.eq(ready + ~ready[1])
 		]
 		m.d.comb += [
@@ -248,20 +248,20 @@ class IOWO(Elaboratable):
 			ResetSignal('processor').eq(~ready[1])
 		]
 
-		with m.If(processor.pAddr == 0):
-			with m.If(processor.pWrite):
-				m.d.sync += gpio.eq(processor.pWriteData)
+		with m.If(processor.pBus.address == 0):
+			with m.If(processor.pBus.write):
+				m.d.sync += gpio.eq(processor.pBus.writeData)
 			with m.If(read):
-				m.d.comb += processor.pReadData.eq(gpio)
-		with m.Elif(processor.pAddr[4:] == 1):
-			with m.If(processor.pWrite):
-				m.d.comb += ram.writeData.eq(processor.pWriteData)
+				m.d.comb += processor.pBus.readData.eq(gpio)
+		with m.Elif(processor.pBus.address[4:] == 1):
+			with m.If(processor.pBus.write):
+				m.d.comb += ram.writeData.eq(processor.pBus.writeData)
 			with m.If(read):
-				m.d.comb += processor.pReadData.eq(ram.readData)
+				m.d.comb += processor.pBus.readData.eq(ram.readData)
 			m.d.comb += [
-				ram.address.eq(processor.pAddr[:4]),
-				ram.read.eq(processor.pRead),
-				ram.write.eq(processor.pWrite),
+				ram.address.eq(processor.pBus.address[:4]),
+				ram.read.eq(processor.pBus.read),
+				ram.write.eq(processor.pBus.write),
 			]
 
 		# This is not generated when this elaboratable is sim'd.

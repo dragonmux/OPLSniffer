@@ -7,11 +7,7 @@ __all__ = ["PIC16"]
 class PIC16(Elaboratable):
 	def __init__(self):
 		self.iBus = InstructionBus()
-		self.pAddr = Signal(7)
-		self.pReadData = Signal(8)
-		self.pRead = Signal()
-		self.pWriteData = Signal(8)
-		self.pWrite = Signal()
+		self.pBus = PeripheralBus()
 
 		self.pcLatchHigh = Signal(8)
 
@@ -70,9 +66,9 @@ class PIC16(Elaboratable):
 					m.d.sync += self.wreg.eq(result)
 				with m.Elif(storesFReg):
 					m.d.sync += [
-						self.pAddr.eq(instruction[0:7]),
-						self.pWriteData.eq(result),
-						self.pWrite.eq(1)
+						self.pBus.address.eq(instruction[0:7]),
+						self.pBus.writeData.eq(result),
+						self.pBus.write.eq(1)
 					]
 				with m.If(storesZeroFlag):
 					m.d.sync += zero.eq(skip)
@@ -93,15 +89,15 @@ class PIC16(Elaboratable):
 				with m.Else():
 					m.d.sync += [
 						instruction.eq(self.iBus.data),
-						self.pAddr.eq(self.iBus.data[0:7])
+						self.pBus.address.eq(self.iBus.data[0:7])
 					]
 
-				m.d.sync += self.pWrite.eq(0)
+				m.d.sync += self.pBus.write.eq(0)
 			with m.Case(2):
 				with m.If(pause):
 					m.d.sync += pause.eq(0)
 				with m.If(loadsFReg):
-					m.d.comb += self.pRead.eq(1)
+					m.d.comb += self.pBus.read.eq(1)
 
 				m.d.sync += opEnable.eq(1)
 				with m.If(opcode == Opcodes.CALL):
@@ -136,7 +132,7 @@ class PIC16(Elaboratable):
 			m.d.comb += lhs.eq(0)
 
 		with m.If(loadsFReg):
-			m.d.comb += rhs.eq(self.pReadData)
+			m.d.comb += rhs.eq(self.pBus.readData)
 		with m.Elif(loadsLiteral):
 			m.d.comb += rhs.eq(instruction[0:8])
 
