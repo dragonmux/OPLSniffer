@@ -168,6 +168,12 @@ class Rebooter(Elaboratable):
 
 		return m
 
+pmods = [
+	Resource("pmod", 1,
+		Pins("1 3 5 7 2 4 6 8", dir="io", conn=("edge", 0)), Attrs(IO_STANDARD="SB_LVCMOS"),
+	)
+]
+
 class IOWO(Elaboratable):
 	program = [ # This program starts at address 0
 		0x3064, # MOVLW     100
@@ -237,6 +243,8 @@ class IOWO(Elaboratable):
 		pBus.add_processor(processor)
 		m.submodules.gpioA = gpioA = GPIO(baseAddress = baseAddress, bus = pBus)
 		baseAddress = gpioA.next_address_after()
+		m.submodules.gpioB = gpioB = GPIO(baseAddress = baseAddress, bus = pBus)
+		baseAddress = gpioB.next_address_after()
 		m.submodules.ram = RAM(baseAddress = 0x10, bus = pBus)
 
 		ready = Signal(range(3))
@@ -260,6 +268,13 @@ class IOWO(Elaboratable):
 				rebooter.buttonInput.eq(userBtn),
 				ledG.eq(rebooter.willReboot)
 			]
+
+			pmod1 = platform.request('pmod', 1)
+			m.d.comb += [
+				gpioB.inputs.eq(pmod1.i),
+				pmod1.o.eq(gpioB.outputs),
+				pmod1.oe.eq(gpioB.outputEnables)
+			]
 		else:
 			m.d.comb += [
 				self.ledR.eq(gpioA.outputs[0]),
@@ -270,4 +285,5 @@ class IOWO(Elaboratable):
 
 if __name__ == '__main__':
 	platform = ICEBreakerBitsyPlatform()
+	platform.add_resources(pmods)
 	platform.build(IOWO(), name = "bitsy", do_program = True)
