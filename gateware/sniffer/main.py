@@ -23,11 +23,22 @@ def cli():
 	actions.add_parser('build', help = 'build a bitstream from the design')
 	simAction = actions.add_parser('simulate', help = 'run simulations on the design')
 	simAction.add_argument(
-		'unit', choices = ['alu'],
+		'unit', choices = ['alu', 'callStack'],
 		help = 'which available unit simulation to run'
 	)
 
 	args = parser.parse_args()
+
+	if args.action == 'simulate':
+		if args.unit == 'alu':
+			from sim.sniffer.pic16.alu import sim
+		elif args.unit == 'callStack':
+			from sim.sniffer.pic16.callStack import sim
+
+		with sim.write_vcd(f'sim/{args.unit}.vcd'):
+			sim.reset()
+			sim.run()
+		exit(0)
 
 	platform = OPLSnifferPlatform()
 	oplSniffer = OPLSniffer()
@@ -35,9 +46,3 @@ def cli():
 		platform.build(oplSniffer, name = 'OPLSniffer')
 	elif args.action == 'generate':
 		nmigenCLI.main_runner(parser, args, oplSniffer, platform = platform, name = 'OPLSniffer')
-	elif args.action == 'simulate':
-		if args.unit == 'alu':
-			from sim.sniffer.pic16.alu import sim
-		with sim.write_vcd(f'sim/{args.unit}.vcd'):
-			sim.reset()
-			sim.run()

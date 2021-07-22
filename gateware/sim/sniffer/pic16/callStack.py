@@ -1,14 +1,4 @@
-#!/usr/bin/env python3
 from nmigen.sim import Simulator
-from nmigen import Signal, Const, unsigned
-
-from sys import argv, path
-from pathlib import Path
-
-gatewarePath = Path(argv[0]).resolve().parent.parent.parent
-if (gatewarePath.parent / 'sniffer').is_dir():
-		path.insert(0, str(gatewarePath.parent))
-
 from sniffer.pic16.callStack import CallStack
 
 dut = CallStack()
@@ -67,7 +57,3 @@ sim = Simulator(dut)
 # This defines the sync clock to have a period of 1/25MHz
 sim.add_clock(40e-9, domain = 'sync')
 sim.add_sync_process(benchSync, domain = 'sync')
-
-with sim.write_vcd('callStack.vcd'):
-	sim.reset()
-	sim.run()
