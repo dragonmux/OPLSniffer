@@ -11,16 +11,12 @@ from nmigen import (
 	Elaboratable, Module, Signal, Memory, Cat, Repl, Instance,
 	ClockDomain, ClockSignal, ResetSignal, DomainRenamer
 )
+from nmigen.build import Resource, Pins, Attrs
 from nmigen_boards.icebreaker_bitsy import ICEBreakerBitsyPlatform
 
 class RAM(Elaboratable):
-	def __init__(self):
-		self.readData = Signal(8)
-		self.writeData = Signal(8)
-		self.address = Signal(3)
-		self.read = Signal()
-		self.write = Signal()
-
+	def __init__(self, *, baseAddress, bus):
+		self._bus = bus.add_memory(address = baseAddress, size = 2 ** 3)
 		self.contents = Memory(width = 8, depth = 2 ** 3)
 
 	def elaborate(self, platform):
@@ -32,13 +28,13 @@ class RAM(Elaboratable):
 		m.submodules += readPort
 
 		m.d.comb += [
-			writePort.addr.eq(self.address),
-			writePort.data.eq(self.writeData),
-			writePort.en.eq(self.write),
+			writePort.addr.eq(self._bus.address),
+			writePort.data.eq(self._bus.writeData),
+			writePort.en.eq(self._bus.write),
 
-			readPort.addr.eq(self.address),
-			self.readData.eq(readPort.data),
-			readPort.en.eq(self.read)
+			readPort.addr.eq(self._bus.address),
+			self._bus.readData.eq(readPort.data),
+			readPort.en.eq(self._bus.read)
 		]
 		return m
 
@@ -206,16 +202,18 @@ class IOWO(Elaboratable):
 			self.read = Signal()
 
 	def elaborate(self, platform):
+		from sniffer.soc.busses.pic import PICBus
 		from sniffer.pic16 import PIC16
 		from sniffer.rom import ROM
+		from sniffer.gpio import GPIO
 		m = Module()
 		m.domains.processor = ClockDomain()
+		m.submodules.bus = pBus = PICBus()
 		m.submodules.processor = processor = DomainRenamer({'sync': 'processor'})(PIC16())
 		# This is not generated when this elaboratable is sim'd.
 		if platform is not None:
 			m.submodules.rom = rom = ROM()
 		m.submodules.rebooter = rebooter = Rebooter(longCounterWidth = 23, buttonInverted = False)
-		m.submodules.ram = ram = RAM()
 
 		iBus = processor.iBus
 
@@ -235,40 +233,25 @@ class IOWO(Elaboratable):
 				self.read.eq(iBus.read),
 			]
 
-		ready = Signal(range(3))
-		gpio = Signal(8)
-		read = Signal()
+		baseAddress = 0x0
+		pBus.add_processor(processor)
+		m.submodules.gpioA = gpioA = GPIO(baseAddress = baseAddress, bus = pBus)
+		baseAddress = gpioA.next_address_after()
+		m.submodules.ram = RAM(baseAddress = 0x10, bus = pBus)
 
-		m.d.sync += [
-			read.eq(processor.pBus.read),
-			ready.eq(ready + ~ready[1])
-		]
+		ready = Signal(range(3))
+
+		m.d.sync += ready.eq(ready + ~ready[1])
 		m.d.comb += [
 			ClockSignal('processor').eq(ClockSignal()),
 			ResetSignal('processor').eq(~ready[1])
 		]
 
-		with m.If(processor.pBus.address == 0):
-			with m.If(processor.pBus.write):
-				m.d.sync += gpio.eq(processor.pBus.writeData)
-			with m.If(read):
-				m.d.comb += processor.pBus.readData.eq(gpio)
-		with m.Elif(processor.pBus.address[4:] == 1):
-			with m.If(processor.pBus.write):
-				m.d.comb += ram.writeData.eq(processor.pBus.writeData)
-			with m.If(read):
-				m.d.comb += processor.pBus.readData.eq(ram.readData)
-			m.d.comb += [
-				ram.address.eq(processor.pBus.address[:4]),
-				ram.read.eq(processor.pBus.read),
-				ram.write.eq(processor.pBus.write),
-			]
-
 		# This is not generated when this elaboratable is sim'd.
 		if platform is not None:
 			ledR = platform.request('led_r')
 			m.d.comb += [
-				ledR.o.eq(gpio[0])
+				ledR.o.eq(gpioA.outputs[0])
 			]
 
 			ledG = platform.request('led_g')
@@ -279,7 +262,7 @@ class IOWO(Elaboratable):
 			]
 		else:
 			m.d.comb += [
-				self.ledR.eq(gpio[0]),
+				self.ledR.eq(gpioA.outputs[0]),
 				rebooter.buttonInput.eq(self.userBtn),
 				self.ledG.eq(rebooter.willReboot),
 			]

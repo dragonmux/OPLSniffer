@@ -1,4 +1,5 @@
 from nmigen import Elaboratable, Module
+from nmigen.utils import log2_int
 from nmigen_soc.memory import MemoryMap
 from .types import *
 
@@ -8,21 +9,21 @@ class PICBus(Elaboratable):
 	def __init__(self):
 		self.processor = None
 		self.memoryMap = MemoryMap(addr_width = 7, data_width = 8)
-		self.registers = {}
 
 	def add_processor(self, processor):
 		assert self.processor == None, "Cannot add more than one processor to the bus"
 		self.processor = processor
 
-	def add_register(self, *, address):
+	def add_register(self, *, address) -> Register:
 		register = Register()
 		self.memoryMap.add_resource(register, size = 1, addr = address)
-		self.registers[address] = register
 		return register
 
-	def add_memory(self, *, address, size):
-		#memory = Memory()
-		pass
+	def add_memory(self, *, address, size) -> Memory:
+		 # Validate size and create Memory instance..
+		memory = Memory(address_width = log2_int(size))
+		self.memoryMap.add_resource(memory, size = size, addr = address)
+		return memory
 
 	def elaborate(self, platform):
 		assert self.processor != None, "Must provide a processor for PICBus to connect to"
@@ -31,15 +32,21 @@ class PICBus(Elaboratable):
 		m = Module()
 		processor = Processor()
 
-		m.d.comb += self.processor.pBus.eq(processor)
+		m.d.comb += self.processor.pBus.connect(processor)
 
-		for address, register in self.registers.items():
-			with m.If(processor.address == address):
+		for resource, addressRange in self.memoryMap.all_resources():
+			addressBegin, addressEnd, dataWidth = addressRange
+			assert dataWidth == 8
+			addressCount = addressEnd - addressBegin
+			addressSlice = log2_int(addressCount)
+			with m.If(processor.address[addressSlice:] == (addressBegin >> addressSlice)):
 				m.d.comb += [
-					register.read.eq(processor.read),
-					processor.readData.eq(register.readData),
-					register.write.eq(processor.write),
-					register.writeData.eq(processor.writeData),
+					resource.read.eq(processor.read),
+					processor.readData.eq(resource.readData),
+					resource.write.eq(processor.write),
+					resource.writeData.eq(processor.writeData),
 				]
+				if isinstance(resource, Memory):
+					m.d.comb += resource.address.eq(processor.address[:addressSlice])
 
 		return m
