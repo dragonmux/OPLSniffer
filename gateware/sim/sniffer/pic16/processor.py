@@ -1,142 +1,167 @@
-#!/usr/bin/env python3
-from nmigen.sim import Simulator
-from nmigen import Signal, Const, unsigned
-
-from sys import argv, path
-from pathlib import Path
-
-gatewarePath = Path(argv[0]).resolve().parent.parent.parent
-if (gatewarePath.parent / 'sniffer').is_dir():
-		path.insert(0, str(gatewarePath.parent))
-
-from sniffer.pic16.types import Opcodes
+from nmigen.sim import Simulator, Settle
 from sniffer.pic16 import PIC16
 
 dut = PIC16()
+iBus = dut.iBus
+pBus = dut.pBus
 
 def benchSync():
-	assert (yield dut.iRead) == 0
-	assert (yield dut.iAddr) == 0
+	assert (yield iBus.read) == 1
+	assert (yield iBus.address) == 0
 	assert (yield dut.pc) == 0
 	# Perform NOP
-	yield dut.iData.eq(0b00_0000_0000_0000)
+	yield iBus.data.eq(0b00_0000_0000_0000)
+	yield Settle()
 	yield
-	assert (yield dut.iRead) == 1
+	yield Settle()
+	assert (yield iBus.read) == 0
 	yield
-	assert (yield dut.iRead) == 0
+	yield Settle()
+	assert (yield iBus.read) == 0
 	yield
-	yield
-	assert (yield dut.iRead) == 0
+	yield Settle()
+	assert (yield iBus.read) == 1
 	# Perform MOVLW 0x1F
-	yield dut.iData.eq(0b11_0000_0001_1111)
+	yield iBus.data.eq(0b11_0000_0001_1111)
+	yield Settle()
 	yield
-	assert (yield dut.iRead) == 1
+	yield Settle()
+	assert (yield iBus.read) == 0
 	yield
-	assert (yield dut.iRead) == 0
+	yield Settle()
+	assert (yield iBus.read) == 0
 	yield
 	yield
-	assert (yield dut.iRead) == 0
+	yield Settle()
+	assert (yield iBus.read) == 1
 	# Perform ADDLW 5
-	yield dut.iData.eq(0b11_1110_0000_0101)
+	yield iBus.data.eq(0b11_1110_0000_0101)
+	yield Settle()
 	yield
+	yield Settle()
 	assert (yield dut.wreg) == 0x1F
-	assert (yield dut.iRead) == 1
+	assert (yield iBus.read) == 0
 	yield
-	assert (yield dut.iRead) == 0
+	yield Settle()
+	assert (yield iBus.read) == 0
 	yield
 	yield
-	assert (yield dut.iRead) == 0
+	yield Settle()
+	assert (yield iBus.read) == 1
 	# Perform ADDWF 5,f
-	yield dut.iData.eq(0b00_0111_1000_0101)
+	yield iBus.data.eq(0b00_0111_1000_0101)
+	yield Settle()
 	yield
+	yield Settle()
 	assert (yield dut.wreg) == 0x24
-	assert (yield dut.iRead) == 1
+	assert (yield iBus.read) == 0
 	yield
-	assert (yield dut.pRead) == 0
-	assert (yield dut.iRead) == 0
-	yield dut.pReadData.eq(0x20)
+	yield Settle()
+	assert (yield pBus.read) == 1
+	assert (yield iBus.read) == 0
+	yield pBus.readData.eq(0x20)
+	yield Settle()
 	yield
-	assert (yield dut.pRead) == 1
+	yield Settle()
+	assert (yield pBus.read) == 0
 	yield
-	assert (yield dut.pRead) == 0
-	assert (yield dut.pWrite) == 0
+	yield Settle()
+	assert (yield iBus.read) == 1
+	assert (yield pBus.read) == 0
+	assert (yield pBus.write) == 0
 	# Perform SWAPF 8,f
-	yield dut.iData.eq(0b00_1110_1000_1000)
+	yield iBus.data.eq(0b00_1110_1000_1000)
+	yield Settle()
 	yield
+	yield Settle()
 	assert (yield dut.wreg) == 0x24
-	assert (yield dut.iRead) == 1
-	assert (yield dut.pWrite) == 1
-	assert (yield dut.pWriteData) == 0x44
+	assert (yield iBus.read) == 0
+	assert (yield pBus.write) == 1
+	assert (yield pBus.writeData) == 0x44
 	yield
-	assert (yield dut.iRead) == 0
-	assert (yield dut.pWrite) == 0
-	yield dut.pReadData.eq(0x0F)
+	yield Settle()
+	assert (yield pBus.write) == 0
+	assert (yield pBus.read) == 1
+	yield pBus.readData.eq(0x0F)
+	yield Settle()
 	yield
-	assert (yield dut.pRead) == 1
+	yield Settle()
+	assert (yield pBus.read) == 0
 	yield
-	assert (yield dut.pRead) == 0
-	assert (yield dut.pWrite) == 0
+	yield Settle()
+	assert (yield iBus.read) == 1
+	assert (yield pBus.write) == 0
 	# Perform RLF 8,w
-	yield dut.iData.eq(0b00_1101_0000_1000)
+	yield iBus.data.eq(0b00_1101_0000_1000)
+	yield Settle()
 	yield
-	assert (yield dut.pWrite) == 1
-	assert (yield dut.pWriteData) == 0xF0
+	yield Settle()
+	assert (yield iBus.read) == 0
+	assert (yield pBus.write) == 1
+	assert (yield pBus.writeData) == 0xF0
 	yield
-	assert (yield dut.iRead) == 0
-	assert (yield dut.pWrite) == 0
-	yield dut.pReadData.eq(0x80)
+	yield Settle()
+	assert (yield pBus.write) == 0
+	yield pBus.readData.eq(0x80)
+	yield Settle()
+	assert (yield pBus.read) == 1
 	yield
-	assert (yield dut.pRead) == 1
+	yield Settle()
+	assert (yield pBus.read) == 0
 	yield
-	assert (yield dut.pRead) == 0
-	assert (yield dut.pWrite) == 0
+	yield Settle()
+	assert (yield pBus.write) == 0
 
 	# Perform BSF 4, 5
-	yield dut.iData.eq(0b01_0110_1000_0100)
+	yield iBus.data.eq(0b01_0110_1000_0100)
+	yield Settle()
 	yield
+	yield Settle()
 	assert (yield dut.wreg) == 0
-	assert (yield dut.pWrite) == 0
+	assert (yield pBus.write) == 0
 	yield
-	assert (yield dut.pWrite) == 0
-	yield
-	yield
-
-	# Perform NOP
-	yield dut.iData.eq(0b00_0000_0000_0000)
-	yield
-	yield
+	yield Settle()
+	assert (yield pBus.write) == 0
 	yield
 	yield
 
 	# Perform NOP
-	yield dut.iData.eq(0b00_0000_0000_0000)
+	yield iBus.data.eq(0b00_0000_0000_0000)
+	yield Settle()
+	yield
+	yield
+	yield
+	yield
+
+	# Perform NOP
+	yield iBus.data.eq(0b00_0000_0000_0000)
 	yield
 	yield
 	yield
 	yield
 
 	# Perform CALL 0x015
-	yield dut.iData.eq(0b10_0000_0001_0101)
+	yield iBus.data.eq(0b10_0000_0001_0101)
 	yield
-	assert (yield dut.iAddr) == 9
+	assert (yield iBus.address) == 9
 	assert (yield dut.pc) == 9
 	yield
 	yield
 	yield
 
 	# Perform RETURN
-	yield dut.iData.eq(0b00_0000_0000_1000)
+	yield iBus.data.eq(0b00_0000_0000_1000)
 	yield
-	assert (yield dut.iAddr) == 0x015
+	assert (yield iBus.address) == 0x015
 	assert (yield dut.pc) == 0x015
 	yield
 	yield
 	yield
 
 	# Perform NOP
-	yield dut.iData.eq(0b00_0000_0000_0000)
+	yield iBus.data.eq(0b00_0000_0000_0000)
 	yield
-	assert (yield dut.iAddr) == 10
+	assert (yield iBus.address) == 10
 	assert (yield dut.pc) == 10
 	yield
 	yield
@@ -146,7 +171,3 @@ sim = Simulator(dut)
 # This defines the sync clock to have a period of 1/25MHz
 sim.add_clock(40e-9, domain = 'sync')
 sim.add_sync_process(benchSync, domain = 'sync')
-
-with sim.write_vcd('processor.vcd'):
-	sim.reset()
-	sim.run()

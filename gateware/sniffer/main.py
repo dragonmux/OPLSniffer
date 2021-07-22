@@ -23,7 +23,7 @@ def cli():
 	actions.add_parser('build', help = 'build a bitstream from the design')
 	simAction = actions.add_parser('simulate', help = 'run simulations on the design')
 	simAction.add_argument(
-		'unit', choices = ['alu', 'callStack'],
+		'unit', choices = ['alu', 'callStack', 'processor'],
 		help = 'which available unit simulation to run'
 	)
 
@@ -34,6 +34,8 @@ def cli():
 			from sim.sniffer.pic16.alu import sim
 		elif args.unit == 'callStack':
 			from sim.sniffer.pic16.callStack import sim
+		elif args.unit == 'processor':
+			from sim.sniffer.pic16.processor import sim
 
 		with sim.write_vcd(f'sim/{args.unit}.vcd'):
 			sim.reset()
