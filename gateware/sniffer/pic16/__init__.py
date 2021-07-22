@@ -160,7 +160,7 @@ class PIC16(Elaboratable):
 			alu.enable.eq(opEnable),
 			alu.lhs.eq(lhs),
 			alu.rhs.eq(rhs),
-			skip.eq(alu.result == 0),
+			skip.eq(alu.result[0:8] == 0),
 			bitmanip.operation.eq(bitOpcode),
 			bitmanip.targetBit.eq(targetBit),
 			bitmanip.enable.eq(opEnable),

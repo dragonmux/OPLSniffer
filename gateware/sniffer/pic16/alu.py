@@ -28,7 +28,7 @@ class ALU(Elaboratable):
 				with m.Case(ALUOpcode.INC):
 					m.d.sync += result.eq(rhs + 1)
 				with m.Case(ALUOpcode.DEC):
-					m.d.sync += result.eq(rhs - 1)
+					m.d.sync += result.eq(rhs + 0x1FF)
 				with m.Case(ALUOpcode.AND):
 					m.d.sync += result.eq(lhs & rhs)
 				with m.Case(ALUOpcode.OR):
