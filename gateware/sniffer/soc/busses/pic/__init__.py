@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module
+from nmigen import Elaboratable, Module, Signal
 from nmigen.utils import log2_int
 from nmigen_soc.memory import MemoryMap
 from .types import *
@@ -14,8 +14,8 @@ class PICBus(Elaboratable):
 		assert self.processor == None, "Cannot add more than one processor to the bus"
 		self.processor = processor
 
-	def add_register(self, *, address) -> Register:
-		register = Register()
+	def add_register(self, *, address, name = None) -> Register:
+		register = Register(name = name)
 		self.memoryMap.add_resource(register, size = 1, addr = address)
 		return register
 
@@ -31,8 +31,10 @@ class PICBus(Elaboratable):
 
 		m = Module()
 		processor = Processor()
+		read = Signal()
 
 		m.d.comb += self.processor.pBus.connect(processor)
+		m.d.sync += read.eq(processor.read)
 
 		for resource, addressRange in self.memoryMap.all_resources():
 			addressBegin, addressEnd, dataWidth = addressRange
@@ -41,12 +43,16 @@ class PICBus(Elaboratable):
 			addressSlice = log2_int(addressCount)
 			with m.If(processor.address[addressSlice:] == (addressBegin >> addressSlice)):
 				m.d.comb += [
-					resource.read.eq(processor.read),
 					processor.readData.eq(resource.readData),
 					resource.write.eq(processor.write),
 					resource.writeData.eq(processor.writeData),
 				]
 				if isinstance(resource, Memory):
-					m.d.comb += resource.address.eq(processor.address[:addressSlice])
+					m.d.comb += [
+						resource.address.eq(processor.address[:addressSlice]),
+						resource.read.eq(processor.read)
+					]
+				else:
+					m.d.comb += resource.read.eq(read)
 
 		return m

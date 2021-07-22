@@ -9,9 +9,9 @@ class GPIO(Elaboratable):
 		self.outputEnables = Signal(8)
 
 		self._registers = (
-			bus.add_register(address = baseAddress),
-			bus.add_register(address = baseAddress + 1),
-			bus.add_register(address = baseAddress + 2),
+			bus.add_register(address = baseAddress, name = 'in'),
+			bus.add_register(address = baseAddress + 1, name = 'out'),
+			bus.add_register(address = baseAddress + 2, name = 'oe'),
 		)
 		self._baseAddress = baseAddress
 
