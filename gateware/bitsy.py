@@ -176,7 +176,7 @@ class IOWO(Elaboratable):
 		0x0092, # MOVWF     0x12 - This should be address 3
 
 		0x3001, # MOVLW     0x01
-		0x0680, # XORWF     0x00,f - Toggles the red LED on/off
+		0x0681, # XORWF     0x01,f - Toggles the red LED on/off
 
 		0x3064, # MOVLW     100
 		0x0B90, # DECFSZ    0x10,f - This should be address 7
