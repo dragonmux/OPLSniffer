@@ -18,7 +18,6 @@ class Bitmanip(Elaboratable):
 		m = Module()
 		value = self.value
 		result = Signal(9, name = 'answer')
-		resultBits = Array((bit for bit in result))
 
 		with m.If(self.enable):
 			with m.Switch(self.operation):
@@ -31,12 +30,12 @@ class Bitmanip(Elaboratable):
 				with m.Case(BitOpcode.BITCLR):
 					m.d.comb += [
 						result.eq(value),
-						resultBits[self.targetBit].eq(0)
+						result.bit_select(self.targetBit, 1).eq(0)
 					]
 				with m.Case(BitOpcode.BITSET):
 					m.d.comb += [
 						result.eq(value),
-						resultBits[self.targetBit].eq(1)
+						result.bit_select(self.targetBit, 1).eq(1)
 					]
 
 		m.d.comb += [
