@@ -60,6 +60,14 @@ class PIC16(Elaboratable):
 		isReturn = self.isReturn(m, opcode)
 		storesZeroFlag = self.storesZeroFlag(m, opcode)
 
+		resultFromALU = Signal()
+		resultFromBit = Signal()
+		resultFromLit = Signal()
+		resultFromWReg = Signal()
+		resultZero = Signal()
+
+		m.d.comb += opEnable.eq(0)
+
 		with m.Switch(q):
 			with m.Case(0):
 				with m.If(storesWReg):
@@ -73,16 +81,18 @@ class PIC16(Elaboratable):
 				with m.If(storesZeroFlag):
 					m.d.sync += zero.eq(skip)
 
-				with m.If(aluOpcode != ALUOpcode.NONE):
+				with m.If(resultFromALU):
 					m.d.sync += carry.eq(alu.carry)
-				with m.If(bitOpcode != BitOpcode.NONE):
+				with m.Elif(resultFromBit):
 					m.d.sync += carry.eq(bitmanip.carryOut)
 
 				with m.If((opcode == Opcodes.INCFSZ) | (opcode == Opcodes.DECFSZ)):
 					m.d.sync += pause.eq(skip)
 
-				m.d.comb += self.iBus.read.eq(1),
-				m.d.sync += self.pc.eq(self.pc)
+				m.d.comb += [
+					self.iBus.read.eq(1),
+					opEnable.eq(1)
+				]
 			with m.Case(1):
 				with m.If(pause):
 					m.d.sync += instruction.eq(0), # Load a NOP if we're entering a pause cycle.
@@ -99,7 +109,6 @@ class PIC16(Elaboratable):
 				with m.If(loadsFReg):
 					m.d.comb += self.pBus.read.eq(1)
 
-				m.d.sync += opEnable.eq(1)
 				with m.If(opcode == Opcodes.CALL):
 					m.d.sync += [
 						callStack.valueIn.eq(self.pc + 1),
@@ -124,48 +133,56 @@ class PIC16(Elaboratable):
 				with m.Elif(isReturn):
 					m.d.sync += callStack.pop.eq(0)
 
-				m.d.sync += opEnable.eq(0)
-
 		with m.If(loadsWReg):
-			m.d.comb += lhs.eq(self.wreg)
+			m.d.sync += lhs.eq(self.wreg)
 		with m.Else():
-			m.d.comb += lhs.eq(0)
+			m.d.sync += lhs.eq(0)
 
 		with m.If(loadsFReg):
-			m.d.comb += rhs.eq(self.pBus.readData)
+			m.d.sync += rhs.eq(self.pBus.readData)
 		with m.Elif(loadsLiteral):
-			m.d.comb += rhs.eq(instruction[0:8])
+			m.d.sync += rhs.eq(instruction[0:8])
+		with m.Else():
+			m.d.sync += rhs.eq(0)
 
 		with m.If((opcode == Opcodes.BCF) | (opcode == Opcodes.BSF)):
-			m.d.comb += targetBit.eq(instruction[7:10])
+			m.d.sync += targetBit.eq(instruction[7:10])
 
-		with m.If(aluOpcode != ALUOpcode.NONE):
+		with m.If(resultFromALU):
 			m.d.comb += result.eq(alu.result)
-		with m.If(bitOpcode != BitOpcode.NONE):
+		with m.Elif(resultFromBit):
 			m.d.comb += result.eq(bitmanip.result)
-		with m.Elif((opcode == Opcodes.CLRF) | (opcode == Opcodes.CLRW)):
+		with m.Elif(resultZero):
 			m.d.comb += result.eq(0)
-		with m.Elif(opcode == Opcodes.MOVLW):
+		with m.Elif(resultFromLit):
 			m.d.comb += result.eq(rhs)
-		with m.Elif(opcode == Opcodes.MOVWF):
+		with m.Elif(resultFromWReg):
 			m.d.comb += result.eq(self.wreg)
 
 		with m.If(~changesFlow):
 			m.d.comb += pcNext.eq(self.pc + 1)
 
+		m.d.sync += [
+			alu.operation.eq(aluOpcode),
+			bitmanip.operation.eq(bitOpcode),
+			bitmanip.value.eq(rhs),
+			bitmanip.carryIn.eq(carry),
+			resultFromALU.eq(aluOpcode != ALUOpcode.NONE),
+			resultFromBit.eq(bitOpcode != BitOpcode.NONE),
+			resultFromLit.eq(opcode == Opcodes.MOVLW),
+			resultFromWReg.eq(opcode == Opcodes.MOVWF),
+			resultZero.eq((opcode == Opcodes.CLRF) | (opcode == Opcodes.CLRW)),
+		]
+
 		m.d.comb += [
 			decoder.instruction.eq(instruction),
 			opcode.eq(decoder.opcode),
-			alu.operation.eq(aluOpcode),
 			alu.enable.eq(opEnable),
 			alu.lhs.eq(lhs),
 			alu.rhs.eq(rhs),
 			skip.eq(alu.result[0:8] == 0),
-			bitmanip.operation.eq(bitOpcode),
 			bitmanip.targetBit.eq(targetBit),
 			bitmanip.enable.eq(opEnable),
-			bitmanip.carryIn.eq(carry),
-			bitmanip.value.eq(rhs),
 			self.iBus.address.eq(self.pc)
 		]
 		return m

@@ -23,18 +23,18 @@ class Bitmanip(Elaboratable):
 		with m.If(self.enable):
 			with m.Switch(self.operation):
 				with m.Case(BitOpcode.ROTR):
-					m.d.sync += result.eq(Cat(value[1:], self.carryIn, value[0]))
+					m.d.comb += result.eq(Cat(value[1:], self.carryIn, value[0]))
 				with m.Case(BitOpcode.ROTL):
-					m.d.sync += result.eq(Cat(self.carryIn, value))
+					m.d.comb += result.eq(Cat(self.carryIn, value))
 				with m.Case(BitOpcode.SWAP):
-					m.d.sync += result.eq(Cat(value[4:8], value[0:4], 0))
+					m.d.comb += result.eq(Cat(value[4:8], value[0:4], 0))
 				with m.Case(BitOpcode.BITCLR):
-					m.d.sync += [
+					m.d.comb += [
 						result.eq(value),
 						resultBits[self.targetBit].eq(0)
 					]
 				with m.Case(BitOpcode.BITSET):
-					m.d.sync += [
+					m.d.comb += [
 						result.eq(value),
 						resultBits[self.targetBit].eq(1)
 					]
