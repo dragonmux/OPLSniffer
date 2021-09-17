@@ -12,10 +12,11 @@ from nmigen import (
 	ClockDomain, ClockSignal, ResetSignal, DomainRenamer
 )
 from nmigen.build import Resource, Pins, Attrs
+from sniffer.soc.busses.pic import PICBus
 from nmigen_boards.icebreaker_bitsy import ICEBreakerBitsyPlatform
 
 class RAM(Elaboratable):
-	def __init__(self, *, baseAddress, bus):
+	def __init__(self, *, baseAddress, bus : PICBus):
 		self._bus = bus.add_memory(address = baseAddress, size = 2 ** 3)
 		self.contents = Memory(width = 8, depth = 2 ** 3)
 
