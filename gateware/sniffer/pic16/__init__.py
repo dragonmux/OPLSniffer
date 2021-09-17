@@ -56,12 +56,12 @@ class PIC16(Elaboratable):
 		loadsWReg = self.loadsWReg(m, opcode)
 		loadsFReg = self.loadsFReg(m, opcode)
 		loadsLiteral = self.loadsLiteral(m, opcode)
-		storesWReg = self.storesWReg(m, opcode, instruction[7])
-		storesFReg = self.storesFReg(m, opcode, instruction[7])
+		storesWReg = Signal()
+		storesFReg = Signal()
 		changesFlow = self.changesFlow(m, opcode)
 		loadPCLatchHigh = self.loadPCLatchHigh(m, opcode)
 		isReturn = self.isReturn(m, opcode)
-		storesZeroFlag = self.storesZeroFlag(m, opcode)
+		storesZeroFlag = Signal()
 
 		resultFromArith = Signal()
 		resultFromLogic = Signal()
@@ -180,6 +180,9 @@ class PIC16(Elaboratable):
 			resultFromLit.eq(opcode == Opcodes.MOVLW),
 			resultFromWReg.eq(opcode == Opcodes.MOVWF),
 			resultZero.eq((opcode == Opcodes.CLRF) | (opcode == Opcodes.CLRW)),
+			storesWReg.eq(self.storesWReg(m, opcode, instruction[7])),
+			storesFReg.eq(self.storesFReg(m, opcode, instruction[7])),
+			storesZeroFlag.eq(self.storesZeroFlag(m, opcode)),
 		]
 
 		m.d.comb += [
