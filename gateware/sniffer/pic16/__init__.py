@@ -1,5 +1,5 @@
 from nmigen import Elaboratable, Module, Signal, unsigned
-from .types import Opcodes, ALUOpcode, BitOpcode
+from .types import Opcodes, ArithOpcode, LogicOpcode, BitOpcode
 from .busses import *
 
 __all__ = ["PIC16"]
@@ -17,14 +17,16 @@ class PIC16(Elaboratable):
 
 	def elaborate(self, platform):
 		from .decoder import Decoder
-		from .alu import ALU
+		from .alu import ArithUnit, LogicUnit
 		from .bitmanip import Bitmanip
 		from .callStack import CallStack
 		m = Module()
 		decoder = Decoder()
 		m.submodules.decoder = decoder
-		alu = ALU()
-		m.submodules.alu = alu
+		arithUnit = ArithUnit()
+		m.submodules.arith = arithUnit
+		logicUnit = LogicUnit()
+		m.submodules.logic = logicUnit
 		bitmanip = Bitmanip()
 		m.submodules.bitmanip = bitmanip
 		callStack = CallStack()
@@ -47,7 +49,8 @@ class PIC16(Elaboratable):
 		zero = self.flags[1]
 
 		opcode = Signal(Opcodes)
-		aluOpcode = self.mapALUOpcode(m, opcode)
+		arithOpcode = self.mapArithOpcode(m, opcode)
+		logicOpcode = self.mapLogicOpcode(m, opcode)
 		bitOpcode = self.mapBitmanipOpcode(m, opcode)
 
 		loadsWReg = self.loadsWReg(m, opcode)
@@ -60,7 +63,8 @@ class PIC16(Elaboratable):
 		isReturn = self.isReturn(m, opcode)
 		storesZeroFlag = self.storesZeroFlag(m, opcode)
 
-		resultFromALU = Signal()
+		resultFromArith = Signal()
+		resultFromLogic = Signal()
 		resultFromBit = Signal()
 		resultFromLit = Signal()
 		resultFromWReg = Signal()
@@ -81,8 +85,8 @@ class PIC16(Elaboratable):
 				with m.If(storesZeroFlag):
 					m.d.sync += zero.eq(skip)
 
-				with m.If(resultFromALU):
-					m.d.sync += carry.eq(alu.carry)
+				with m.If(resultFromArith):
+					m.d.sync += carry.eq(arithUnit.carry)
 				with m.Elif(resultFromBit):
 					m.d.sync += carry.eq(bitmanip.carryOut)
 
@@ -148,8 +152,10 @@ class PIC16(Elaboratable):
 		with m.If((opcode == Opcodes.BCF) | (opcode == Opcodes.BSF)):
 			m.d.sync += targetBit.eq(instruction[7:10])
 
-		with m.If(resultFromALU):
-			m.d.comb += result.eq(alu.result)
+		with m.If(resultFromArith):
+			m.d.comb += result.eq(arithUnit.result)
+		with m.Elif(resultFromLogic):
+			m.d.comb += result.eq(logicUnit.result)
 		with m.Elif(resultFromBit):
 			m.d.comb += result.eq(bitmanip.result)
 		with m.Elif(resultZero):
@@ -163,11 +169,13 @@ class PIC16(Elaboratable):
 			m.d.comb += pcNext.eq(self.pc + 1)
 
 		m.d.sync += [
-			alu.operation.eq(aluOpcode),
+			arithUnit.operation.eq(arithOpcode),
+			logicUnit.operation.eq(logicOpcode),
 			bitmanip.operation.eq(bitOpcode),
 			bitmanip.value.eq(rhs),
 			bitmanip.carryIn.eq(carry),
-			resultFromALU.eq(aluOpcode != ALUOpcode.NONE),
+			resultFromArith.eq(arithOpcode != ArithOpcode.NONE),
+			resultFromLogic.eq(logicOpcode != LogicOpcode.NONE),
 			resultFromBit.eq(bitOpcode != BitOpcode.NONE),
 			resultFromLit.eq(opcode == Opcodes.MOVLW),
 			resultFromWReg.eq(opcode == Opcodes.MOVWF),
@@ -177,35 +185,45 @@ class PIC16(Elaboratable):
 		m.d.comb += [
 			decoder.instruction.eq(instruction),
 			opcode.eq(decoder.opcode),
-			alu.enable.eq(opEnable),
-			alu.lhs.eq(lhs),
-			alu.rhs.eq(rhs),
-			skip.eq(alu.result[0:8] == 0),
+			arithUnit.enable.eq(opEnable),
+			arithUnit.lhs.eq(lhs),
+			arithUnit.rhs.eq(rhs),
+			skip.eq(arithUnit.result[0:8] == 0),
+			logicUnit.enable.eq(opEnable),
+			logicUnit.lhs.eq(lhs),
+			logicUnit.rhs.eq(rhs),
 			bitmanip.targetBit.eq(targetBit),
 			bitmanip.enable.eq(opEnable),
 			self.iBus.address.eq(self.pc)
 		]
 		return m
 
-	def mapALUOpcode(self, m, opcode):
-		result = Signal(ALUOpcode, name = "aluOpcode")
+	def mapArithOpcode(self, m, opcode):
+		result = Signal(ArithOpcode, name = "aluOpcode")
 		with m.Switch(opcode):
 			with m.Case(Opcodes.ADDLW, Opcodes.ADDWF):
-				m.d.comb += result.eq(ALUOpcode.ADD)
+				m.d.comb += result.eq(ArithOpcode.ADD)
 			with m.Case(Opcodes.SUBLW, Opcodes.SUBWF):
-				m.d.comb += result.eq(ALUOpcode.SUB)
+				m.d.comb += result.eq(ArithOpcode.SUB)
 			with m.Case(Opcodes.INCF, Opcodes.INCFSZ):
-				m.d.comb += result.eq(ALUOpcode.INC)
+				m.d.comb += result.eq(ArithOpcode.INC)
 			with m.Case(Opcodes.DECF, Opcodes.DECFSZ):
-				m.d.comb += result.eq(ALUOpcode.DEC)
-			with m.Case(Opcodes.ANDLW, Opcodes.ANDWF):
-				m.d.comb += result.eq(ALUOpcode.AND)
-			with m.Case(Opcodes.IORLW, Opcodes.IORWF):
-				m.d.comb += result.eq(ALUOpcode.OR)
-			with m.Case(Opcodes.XORLW, Opcodes.XORWF):
-				m.d.comb += result.eq(ALUOpcode.XOR)
+				m.d.comb += result.eq(ArithOpcode.DEC)
 			with m.Default():
-				m.d.comb += result.eq(ALUOpcode.NONE)
+				m.d.comb += result.eq(ArithOpcode.NONE)
+		return result
+
+	def mapLogicOpcode(self, m, opcode):
+		result = Signal(LogicOpcode, name = "logicOpcode")
+		with m.Switch(opcode):
+			with m.Case(Opcodes.ANDLW, Opcodes.ANDWF):
+				m.d.comb += result.eq(LogicOpcode.AND)
+			with m.Case(Opcodes.IORLW, Opcodes.IORWF):
+				m.d.comb += result.eq(LogicOpcode.OR)
+			with m.Case(Opcodes.XORLW, Opcodes.XORWF):
+				m.d.comb += result.eq(LogicOpcode.XOR)
+			with m.Default():
+				m.d.comb += result.eq(LogicOpcode.NONE)
 		return result
 
 	def mapBitmanipOpcode(self, m, opcode):
