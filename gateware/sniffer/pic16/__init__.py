@@ -69,6 +69,7 @@ class PIC16(Elaboratable):
 		resultFromLit = Signal()
 		resultFromWReg = Signal()
 		resultZero = Signal()
+		carryInvert = Signal()
 
 		m.d.comb += opEnable.eq(0)
 
@@ -105,6 +106,8 @@ class PIC16(Elaboratable):
 						instruction.eq(self.iBus.data),
 						self.pBus.address.eq(self.iBus.data[0:7])
 					]
+				with m.If(resultFromArith):
+					m.d.sync += carry.eq(carry ^ carryInvert)
 
 				m.d.sync += self.pBus.write.eq(0)
 			with m.Case(2):
@@ -183,6 +186,7 @@ class PIC16(Elaboratable):
 			storesWReg.eq(self.storesWReg(m, opcode, instruction[7])),
 			storesFReg.eq(self.storesFReg(m, opcode, instruction[7])),
 			storesZeroFlag.eq(self.storesZeroFlag(m, opcode)),
+			carryInvert.eq((arithOpcode == ArithOpcode.SUB) | (arithOpcode == ArithOpcode.DEC)),
 		]
 
 		m.d.comb += [
@@ -191,13 +195,13 @@ class PIC16(Elaboratable):
 			arithUnit.enable.eq(opEnable),
 			arithUnit.lhs.eq(lhs),
 			arithUnit.rhs.eq(rhs),
-			skip.eq(arithUnit.result[0:8] == 0),
+			skip.eq(arithUnit.result == 0),
 			logicUnit.enable.eq(opEnable),
 			logicUnit.lhs.eq(lhs),
 			logicUnit.rhs.eq(rhs),
 			bitmanip.targetBit.eq(targetBit),
 			bitmanip.enable.eq(opEnable),
-			self.iBus.address.eq(self.pc)
+			self.iBus.address.eq(self.pc),
 		]
 		return m
 

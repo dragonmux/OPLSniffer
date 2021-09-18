@@ -15,16 +15,16 @@ class ArithUnit(Elaboratable):
 
 	def elaborate(self, platform):
 		m = Module()
-		lhs = Signal(9)
+		lhs = Signal.like(self.lhs)
 		rhs = self.rhs
-		rhs_n = Signal(9)
+		rhs_n = Signal(8)
 		result = Signal(9, name = 'answer')
 
 		with m.Switch(self.operation):
 			with m.Case(ArithOpcode.INC):
 				m.d.comb += lhs.eq(1)
 			with m.Case(ArithOpcode.DEC):
-				m.d.comb += lhs.eq(0x1FF)
+				m.d.comb += lhs.eq(0xFF)
 			with m.Default():
 				m.d.comb += lhs.eq(self.lhs)
 
@@ -65,5 +65,6 @@ class LogicUnit(Elaboratable):
 					m.d.comb += result.eq(lhs | rhs)
 				with m.Case(LogicOpcode.XOR):
 					m.d.comb += result.eq(lhs ^ rhs)
-
+				with m.Default():
+					m.d.comb += result.eq(0)
 		return m
