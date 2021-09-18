@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module, Signal
+from nmigen import Elaboratable, Module, Signal, Mux
 from .types import ArithOpcode, LogicOpcode
 
 __all__ = ('ArithUnit', 'LogicUnit')
@@ -15,21 +15,25 @@ class ArithUnit(Elaboratable):
 
 	def elaborate(self, platform):
 		m = Module()
-		lhs = self.lhs
+		lhs = Signal(9)
 		rhs = self.rhs
 		rhs_n = Signal(9)
 		result = Signal(9, name = 'answer')
 
+		with m.Switch(self.operation):
+			with m.Case(ArithOpcode.INC):
+				m.d.comb += lhs.eq(1)
+			with m.Case(ArithOpcode.DEC):
+				m.d.comb += lhs.eq(0x1FF)
+			with m.Default():
+				m.d.comb += lhs.eq(self.lhs)
+
 		with m.If(self.enable):
 			with m.Switch(self.operation):
-				with m.Case(ArithOpcode.ADD):
-					m.d.comb += result.eq(lhs + rhs)
 				with m.Case(ArithOpcode.SUB):
 					m.d.comb += result.eq(lhs + rhs_n)
-				with m.Case(ArithOpcode.INC):
-					m.d.comb += result.eq(rhs + 1)
-				with m.Case(ArithOpcode.DEC):
-					m.d.comb += result.eq(rhs + 0x1FF)
+				with m.Default():
+					m.d.comb += result.eq(lhs + rhs)
 
 		m.d.sync += rhs_n.eq((~rhs) + 1)
 		m.d.comb += [
