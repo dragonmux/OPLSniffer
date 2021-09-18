@@ -2,7 +2,7 @@ from enum import Enum, unique, auto
 
 __all__ = ('Opcodes', 'ALUOpcode', 'LogicOpcode', 'BitOpcode')
 
-#@unique
+@unique
 class Opcodes(Enum):
 	NOP    = 0
 	RETURN = 1
@@ -42,27 +42,24 @@ class Opcodes(Enum):
 
 @unique
 class ArithOpcode(Enum):
-	NONE = auto()
-	ADD = auto()
-	SUB = auto()
-	INC = auto()
-	DEC = auto()
-	AND = auto()
-	OR = auto()
-	XOR = auto()
+	NONE = 0
+	ADD = 1
+	SUB = 2
+	INC = 3
+	DEC = 4
 
 @unique
 class LogicOpcode(Enum):
-	NONE = auto()
-	AND = auto()
-	OR = auto()
-	XOR = auto()
+	NONE = 0
+	AND = 1
+	OR = 2
+	XOR = 3
 
 @unique
 class BitOpcode(Enum):
-	NONE = auto()
-	ROTR = auto()
-	ROTL = auto()
-	SWAP = auto()
-	BITCLR = auto()
-	BITSET = auto()
+	NONE = 0
+	ROTR = 1
+	ROTL = 2
+	SWAP = 3
+	BITCLR = 4
+	BITSET = 5
