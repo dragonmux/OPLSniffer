@@ -1,10 +1,10 @@
-from amaranth.vendor.xilinx_spartan_3_6 import XilinxSpartan6Platform
+from amaranth.vendor.xilinx import XilinxPlatform
 from amaranth.build import Resource, Clock, Pins, Attrs
 from .resources import *
 
 __all__ = ["OPLSnifferPlatform"]
 
-class OPLSnifferPlatform(XilinxSpartan6Platform):
+class OPLSnifferPlatform(XilinxPlatform):
 	device = 'xc6slx9'
 	package = 'tqg144'
 	speed = '2'
