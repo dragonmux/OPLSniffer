@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module, Signal, Cat, Array
+from amaranth import Elaboratable, Module, Signal, Cat, Array
 from .types import BitOpcode
 
 __all__ = ["Bitmanip"]

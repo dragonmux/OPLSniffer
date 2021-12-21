@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module, Signal, Memory
+from amaranth import Elaboratable, Module, Signal, Memory
 
 class CallStack(Elaboratable):
 	def __init__(self):

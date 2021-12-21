@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module, Signal, ClockDomain, DomainRenamer, ClockSignal, ResetSignal
+from amaranth import Elaboratable, Module, Signal, ClockDomain, DomainRenamer, ClockSignal, ResetSignal
 
 __all__ = ["OPLSniffer"]
 

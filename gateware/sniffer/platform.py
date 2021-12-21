@@ -1,5 +1,5 @@
-from nmigen.vendor.xilinx_spartan_3_6 import XilinxSpartan6Platform
-from nmigen.build import Resource, Clock, Pins, Attrs
+from amaranth.vendor.xilinx_spartan_3_6 import XilinxSpartan6Platform
+from amaranth.build import Resource, Clock, Pins, Attrs
 from .resources import *
 
 __all__ = ["OPLSnifferPlatform"]

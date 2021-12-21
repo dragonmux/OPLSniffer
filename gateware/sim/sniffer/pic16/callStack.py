@@ -1,4 +1,4 @@
-from nmigen.sim import Simulator
+from amaranth.sim import Simulator
 from sniffer.pic16.callStack import CallStack
 
 dut = CallStack()

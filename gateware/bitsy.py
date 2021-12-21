@@ -7,13 +7,13 @@ gatewarePath = Path(argv[0]).resolve()
 if (gatewarePath.parent / 'sniffer').is_dir():
 		path.insert(0, str(gatewarePath.parent))
 
-from nmigen import (
+from amaranth import (
 	Elaboratable, Module, Signal, Memory, Cat, Repl, Instance,
 	ClockDomain, ClockSignal, ResetSignal, DomainRenamer
 )
-from nmigen.build import Resource, Pins, Attrs
+from amaranth.build import Resource, Pins, Attrs
 from sniffer.soc.busses.pic import PICBus
-from nmigen_boards.icebreaker_bitsy import ICEBreakerBitsyPlatform
+from amaranth_boards.icebreaker_bitsy import ICEBreakerBitsyPlatform
 
 class RAM(Elaboratable):
 	def __init__(self, *, baseAddress, bus : PICBus):
@@ -285,6 +285,8 @@ class IOWO(Elaboratable):
 		return m
 
 if __name__ == '__main__':
+	from amaranth.build import Clock
 	platform = ICEBreakerBitsyPlatform()
+	platform.resources['clk12', 0].clock = Clock(48e6)
 	platform.add_resources(pmods)
 	platform.build(IOWO(), name = "bitsy", do_program = True)

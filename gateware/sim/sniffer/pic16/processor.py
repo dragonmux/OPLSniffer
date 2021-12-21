@@ -1,4 +1,4 @@
-from nmigen.sim import Simulator, Settle
+from amaranth.sim import Simulator, Settle
 from sniffer.pic16 import PIC16
 
 dut = PIC16()

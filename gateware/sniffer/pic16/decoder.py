@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module, Signal
+from amaranth import Elaboratable, Module, Signal
 from .types import Opcodes
 
 __all__ = ["Decoder"]

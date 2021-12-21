@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module, Signal, Mux
+from amaranth import Elaboratable, Module, Signal, Mux
 from .types import ArithOpcode, LogicOpcode
 
 __all__ = ('ArithUnit', 'LogicUnit')

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from nmigen.sim import Simulator
-from nmigen import Signal, Const, unsigned
+from amaranth.sim import Simulator
+from amaranth import Signal, Const, unsigned
 
 from sys import argv, path
 from pathlib import Path

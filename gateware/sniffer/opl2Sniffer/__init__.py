@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module
+from amaranth import Elaboratable, Module
 
 __all__ = ["OPL2Sniffer"]
 

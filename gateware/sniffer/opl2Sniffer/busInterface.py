@@ -1,5 +1,5 @@
-from nmigen import Elaboratable, Module, Signal
-from nmigen_soc.memory import MemoryMap
+from amaranth import Elaboratable, Module, Signal
+from amaranth_soc.memory import MemoryMap
 from ..soc.peripheral import Peripheral
 
 __all__ = ['BusInterface']

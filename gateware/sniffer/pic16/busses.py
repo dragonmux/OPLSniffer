@@ -1,4 +1,4 @@
-from nmigen import Record
+from amaranth import Record
 from ..soc.busses.pic.types import Processor as PeripheralBus
 
 __all__ = ('InstructionBus', 'PeripheralBus')

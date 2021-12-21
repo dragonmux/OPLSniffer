@@ -1,6 +1,6 @@
-from nmigen import Module, Elaboratable, tracer
-from nmigen_soc import csr
-from nmigen_soc.memory import MemoryMap
+from amaranth import Module, Elaboratable, tracer
+from amaranth_soc import csr
+from amaranth_soc.memory import MemoryMap
 
 __all__ = ['Peripheral', 'CSRBank', 'PeripheralBridge']
 

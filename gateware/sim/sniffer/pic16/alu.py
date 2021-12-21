@@ -1,5 +1,5 @@
-from nmigen import Elaboratable, Signal, Module
-from nmigen.sim import Simulator, Settle
+from amaranth import Elaboratable, Signal, Module
+from amaranth.sim import Simulator, Settle
 from sniffer.pic16.types import ArithOpcode, LogicOpcode
 from sniffer.pic16.alu import ArithUnit, LogicUnit
 

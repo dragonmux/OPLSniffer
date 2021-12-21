@@ -1,5 +1,5 @@
-from nmigen import Record
-from nmigen.hdl.rec import Direction
+from amaranth import Record
+from amaranth.hdl.rec import Direction
 
 __all__ = ('Processor', 'Register', 'Memory')
 

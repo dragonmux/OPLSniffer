@@ -1,6 +1,6 @@
-from nmigen import Elaboratable, Module, Signal
-from nmigen.utils import log2_int
-from nmigen_soc.memory import MemoryMap
+from amaranth import Elaboratable, Module, Signal
+from amaranth.utils import log2_int
+from amaranth_soc.memory import MemoryMap
 from .types import *
 
 __all__ = ('PICBus')

@@ -1,4 +1,4 @@
-from nmigen import Elaboratable, Module, Signal, unsigned
+from amaranth import Elaboratable, Module, Signal, unsigned
 from .types import Opcodes, ArithOpcode, LogicOpcode, BitOpcode
 from .busses import *
 

@@ -1,6 +1,6 @@
 from collections import namedtuple
-from nmigen import Elaboratable, Module, Signal, Cat, Memory, ClockDomain, ClockSignal
-from nmigen.lib.fifo import AsyncFIFO
+from amaranth import Elaboratable, Module, Signal, Cat, Memory, ClockDomain, ClockSignal
+from amaranth.lib.fifo import AsyncFIFO
 
 __all__ = ['Sniffer']
 

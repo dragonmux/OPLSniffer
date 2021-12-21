@@ -1,4 +1,4 @@
-from nmigen.build import Resource, Subsignal, Pins, Clock
+from amaranth.build import Resource, Subsignal, Pins, Clock
 
 __all__ = ['OPLResource', 'GPIOResources']
 

@@ -3,7 +3,7 @@ from .oplSniffer import OPLSniffer
 
 def cli():
 	from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, FileType
-	from nmigen import cli as nmigenCLI
+	from amaranth import cli as amaranthCLI
 
 	parser = ArgumentParser(formatter_class = ArgumentDefaultsHelpFormatter,
 		description = 'OPLSniffer')
@@ -47,4 +47,4 @@ def cli():
 	if args.action == 'build':
 		platform.build(oplSniffer, name = 'OPLSniffer')
 	elif args.action == 'generate':
-		nmigenCLI.main_runner(parser, args, oplSniffer, platform = platform, name = 'OPLSniffer')
+		amaranthCLI.main_runner(parser, args, oplSniffer, platform = platform, name = 'OPLSniffer')
