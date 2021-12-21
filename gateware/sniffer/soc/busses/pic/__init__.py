@@ -14,15 +14,15 @@ class PICBus(Elaboratable):
 		assert self.processor == None, "Cannot add more than one processor to the bus"
 		self.processor = processor
 
-	def add_register(self, *, address, name = None) -> Register:
+	def add_register(self, *, address, name) -> Register:
 		register = Register(name = name)
-		self.memoryMap.add_resource(register, size = 1, addr = address)
+		self.memoryMap.add_resource(register, name = name, size = 1, addr = address)
 		return register
 
-	def add_memory(self, *, address, size) -> Memory:
+	def add_memory(self, *, address, size, name) -> Memory:
 		 # Validate size and create Memory instance..
 		memory = Memory(address_width = log2_int(size))
-		self.memoryMap.add_resource(memory, size = size, addr = address)
+		self.memoryMap.add_resource(memory, name = name, size = size, addr = address)
 		return memory
 
 	def elaborate(self, platform):
@@ -36,8 +36,11 @@ class PICBus(Elaboratable):
 		m.d.comb += self.processor.pBus.connect(processor)
 		m.d.sync += read.eq(processor.read)
 
-		for resource, addressRange in self.memoryMap.all_resources():
-			addressBegin, addressEnd, dataWidth = addressRange
+		for resourceInfo in self.memoryMap.all_resources():
+			resource = resourceInfo.resource
+			addressBegin = resourceInfo.start
+			addressEnd = resourceInfo.end
+			dataWidth = resourceInfo.width
 			assert dataWidth == 8
 			addressCount = addressEnd - addressBegin
 			addressSlice = log2_int(addressCount)

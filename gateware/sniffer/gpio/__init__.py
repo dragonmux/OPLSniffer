@@ -1,17 +1,18 @@
-from amaranth import Elaboratable, Module, Signal
+from amaranth import Elaboratable, Module, Signal, tracer
 
 __all__ = ('GPIO', )
 
 class GPIO(Elaboratable):
 	def __init__(self, *, baseAddress, bus):
+		namespace = tracer.get_var_name(depth = 2)
 		self.inputs = Signal(8)
 		self.outputs = Signal(8)
 		self.outputEnables = Signal(8)
 
 		self._registers = (
-			bus.add_register(address = baseAddress, name = 'in'),
-			bus.add_register(address = baseAddress + 1, name = 'out'),
-			bus.add_register(address = baseAddress + 2, name = 'oe'),
+			bus.add_register(address = baseAddress, name = f'{namespace}.in'),
+			bus.add_register(address = baseAddress + 1, name = f'{namespace}.out'),
+			bus.add_register(address = baseAddress + 2, name = f'{namespace}.oe'),
 		)
 		self._baseAddress = baseAddress
 

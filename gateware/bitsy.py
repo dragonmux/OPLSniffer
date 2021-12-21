@@ -17,7 +17,7 @@ from amaranth_boards.icebreaker_bitsy import ICEBreakerBitsyPlatform
 
 class RAM(Elaboratable):
 	def __init__(self, *, baseAddress, bus : PICBus):
-		self._bus = bus.add_memory(address = baseAddress, size = 2 ** 3)
+		self._bus = bus.add_memory(address = baseAddress, size = 2 ** 3, name = 'RAM')
 		self.contents = Memory(width = 8, depth = 2 ** 3)
 
 	def elaborate(self, platform):
