@@ -56,32 +56,32 @@ def checkResult(arithResult, logicResult, carry):
 	assert (yield dut.carry) == carry
 
 def benchSync():
-	yield from performArith(ArithOpcode.NONE, 0, 0)
+	yield from performArith(ArithOpcode.ADD, 0, 0)
 	yield from performLogic(LogicOpcode.NONE, 0, 0)
 	yield
 	yield from checkResult(0, 0, 0)
 	yield from performArith(ArithOpcode.ADD, 5, 10)
 	yield
 	yield from checkResult(15, 0, 0)
-	yield from performArith(ArithOpcode.NONE, 0, 10)
+	yield from performArith(ArithOpcode.ADD, 0, 10)
 	yield
 	yield from checkResult(10, 0, 0)
 	yield from performArith(ArithOpcode.SUB, 35, 10)
 	yield
 	yield from checkResult(25, 0, 0)
-	yield from performArith(ArithOpcode.NONE, 255, 112)
+	yield from performArith(ArithOpcode.ADD, 255, 112)
 	yield
 	yield from checkResult(111, 0, 1)
 	yield from performArith(ArithOpcode.INC, 35, 0)
 	yield
 	yield from checkResult(1, 0, 0)
-	yield from performArith(ArithOpcode.NONE, 0, 112)
+	yield from performArith(ArithOpcode.ADD, 0, 112)
 	yield
 	yield from checkResult(112, 0, 0)
 	yield from performArith(ArithOpcode.DEC, 196, 254)
 	yield
 	yield from checkResult(253, 0, 0)
-	yield from performArith(ArithOpcode.NONE, 0, 0)
+	yield from performArith(ArithOpcode.ADD, 0, 0)
 	yield
 	yield from checkResult(0, 0, 0)
 	yield from performLogic(LogicOpcode.AND, 154, 196)
@@ -108,7 +108,7 @@ def benchSync():
 	yield from performArith(ArithOpcode.SUB, 1, 5)
 	yield
 	yield from checkResult(252, 0, 1)
-	yield from performArith(ArithOpcode.NONE, 0, 0)
+	yield from performArith(ArithOpcode.ADD, 0, 0)
 	yield from performLogic(LogicOpcode.OR, 0xA0, 0x05)
 	yield
 	yield from checkResult(0, 0xA5, 0)
