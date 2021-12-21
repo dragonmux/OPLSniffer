@@ -42,7 +42,6 @@ class Opcodes(Enum):
 
 @unique
 class ArithOpcode(Enum):
-	NONE = 0
 	ADD = 1
 	SUB = 2
 	INC = 3

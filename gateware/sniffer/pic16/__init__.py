@@ -106,8 +106,7 @@ class PIC16(Elaboratable):
 						instruction.eq(self.iBus.data),
 						self.pBus.address.eq(self.iBus.data[0:7])
 					]
-				with m.If(resultFromArith):
-					m.d.sync += carry.eq(carry ^ carryInvert)
+				m.d.sync += carry.eq(carry ^ (resultFromArith & carryInvert))
 
 				m.d.sync += self.pBus.write.eq(0)
 			with m.Case(2):
@@ -177,7 +176,7 @@ class PIC16(Elaboratable):
 			bitmanip.operation.eq(bitOpcode),
 			bitmanip.value.eq(rhs),
 			bitmanip.carryIn.eq(carry),
-			resultFromArith.eq(arithOpcode != ArithOpcode.NONE),
+			resultFromArith.eq(self.resultFromArith(m, opcode)),
 			resultFromLogic.eq(logicOpcode != LogicOpcode.NONE),
 			resultFromBit.eq(bitOpcode != BitOpcode.NONE),
 			resultFromLit.eq(opcode == Opcodes.MOVLW),
@@ -217,7 +216,25 @@ class PIC16(Elaboratable):
 			with m.Case(Opcodes.DECF, Opcodes.DECFSZ):
 				m.d.comb += result.eq(ArithOpcode.DEC)
 			with m.Default():
-				m.d.comb += result.eq(ArithOpcode.NONE)
+				m.d.comb += result.eq(ArithOpcode.ADD)
+		return result
+
+	def resultFromArith(self, m, opcode):
+		result = Signal(name = "resultFromArith")
+		with m.Switch(opcode):
+			with m.Case(
+				Opcodes.ADDLW,
+				Opcodes.SUBLW,
+				Opcodes.INCF,
+				Opcodes.DECF,
+				Opcodes.ADDWF,
+				Opcodes.SUBWF,
+				Opcodes.INCFSZ,
+				Opcodes.DECFSZ
+			):
+				m.d.comb += result.eq(1)
+			with m.Default():
+				m.d.comb += result.eq(0)
 		return result
 
 	def mapLogicOpcode(self, m, opcode):
